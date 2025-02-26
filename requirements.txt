@@ -1,5 +1,5 @@
-streamlit
-pandas
 http.client
 json
+streamlit
+pandas
 plotly
