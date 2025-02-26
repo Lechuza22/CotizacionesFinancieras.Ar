@@ -63,10 +63,19 @@ def obtener_datos_scraping():
             df.columns = ["Fecha", "Compra", "Venta"]
             df["Fecha"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y")
             df.set_index("Fecha", inplace=True)
-            df["Venta"] = pd.to_numeric(df["Venta"].str.replace("$", "").str.replace(",", ""), errors="coerce")
+            df["Venta"] = pd.to_numeric(df["Venta"].astype(str).str.replace("$", "").str.replace(",", ""), errors="coerce")
             return df
     
     return None
+
+def verificar_scraping():
+    """Verifica la disponibilidad de los datos al hacer scraping."""
+    df = obtener_datos_scraping()
+    if df is None or df.empty:
+        st.error("⚠️ No se pudo obtener datos históricos del dólar blue. Intente más tarde o verifique la fuente.")
+    else:
+        st.success("✅ Datos obtenidos correctamente.")
+        st.write(df.head())
 
 def predecir_dolar_blue(df, dias_prediccion):
     """Predice el valor del dólar blue usando ARIMA."""
@@ -91,6 +100,9 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
+
+
 def obtener_precio_dolar(tipo):
     """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
     try:
