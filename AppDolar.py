@@ -78,13 +78,16 @@ def cargar_datos():
         
         # Verificar columnas disponibles
         st.write("### Columnas en el archivo CSV:")
-        st.write(df.columns)
+        st.write(list(df.columns))
         
         if 'category' not in df.columns:
             raise ValueError("La columna 'category' no se encuentra en el archivo CSV.")
+        if 'valor' not in df.columns:
+            raise ValueError("La columna 'valor' no se encuentra en el archivo CSV. Verifique los nombres de las columnas.")
         
-        # Convertir la columna 'category' en un índice numérico secuencial
+        # Convertir las columnas necesarias
         df['category'] = pd.to_numeric(df['category'], errors='coerce')
+        df['valor'] = pd.to_numeric(df['Venta'], errors='coerce')
         df.set_index('category', inplace=True)
         return df
     except Exception as e:
