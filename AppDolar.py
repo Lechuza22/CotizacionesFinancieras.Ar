@@ -72,7 +72,7 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 def cargar_datos():
     """Carga el archivo CSV con los datos del dólar blue y ajusta el índice temporal."""
     try:
-        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
+        df = pd.read_csv("/mnt/data/Bluex12.csv", encoding="utf-8")
         st.write("### Vista previa de los datos:")
         st.write(df.head())
         
@@ -86,7 +86,9 @@ def cargar_datos():
             raise ValueError("La columna 'valor' no se encuentra en el archivo CSV. Verifique los nombres de las columnas.")
         
         # Convertir las columnas necesarias
-        df['category'] = pd.to_numeric(df['category'], errors='coerce').astype('Int64')
+        df['category'] = pd.to_numeric(df['category'], errors='coerce')
+        df = df.dropna(subset=['category'])
+        df['category'] = df['category'].astype(int)
         df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
         df.set_index('category', inplace=True)
         return df
@@ -148,6 +150,7 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 
 # =========================
