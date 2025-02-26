@@ -9,4 +9,4 @@ requests
 beautifulsoup4
 statsmodels
 matplotlib
-itertools
+
