@@ -122,9 +122,11 @@ def predecir_dolar_blue(df, dias_prediccion):
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    if df.empty:
+    if df is None or df.empty:
+        st.error("El DataFrame está vacío o no se cargó correctamente.")
+        return None
         raise ValueError("El DataFrame está vacío después de la carga de datos.")
-    ultimo_indice = df.index[-1] if not df.index.empty else 0
+    ultimo_indice = int(df.index[-1]) if not df.index.empty else 0
     if pd.isna(ultimo_indice):
         raise ValueError("El índice 'category' contiene valores NaN o no es válido.")
     categorias_prediccion = list(range(int(ultimo_indice) + 1, int(ultimo_indice) + 1 + dias_prediccion))
@@ -148,7 +150,7 @@ def mostrar_prediccion():
         st.dataframe(df_predicciones_styled)
         
         # Graficar los datos históricos y las predicciones
-        fig = px.line(df_predicciones, x='category', y='Predicción Venta', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        fig = px.line(df_predicciones, x='category', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
