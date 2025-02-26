@@ -1,5 +1,7 @@
 streamlit
 pandas
-matplotlib
-
+plotly
+beautifulsoup4
+requests
+lxml
 
