@@ -78,7 +78,7 @@ def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
     df = cargar_datos()
     if df is not None and not df.empty:
-        horas_prediccion = st.selectbox("Seleccione el horizonte de predicción (horas):", [6, 12, 24, 36, 42, 72])
+        horas_prediccion = st.selectbox("Seleccione el horizonte de predicción (horas):", [3, 6, 12, 24, 36, 42, 72])
         df_predicciones = predecir_dolar_blue(df, horas_prediccion)
         st.subheader(f"Predicción para las próximas {horas_prediccion} horas")
         st.dataframe(df_predicciones)
