@@ -177,7 +177,8 @@ def mostrar_noticias():
     noticias = obtener_noticias()
     
     for noticia in noticias:
-        st.markdown(f"🔹 [{noticia['titulo']}]({noticia['enlace']})")
+        st.write(f"**{noticia['titulo']}**")
+        st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
 
 # =========================
 # 📌 MENÚ PRINCIPAL
