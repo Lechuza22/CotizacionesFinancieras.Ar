@@ -28,26 +28,32 @@ def obtener_precio_dolar(tipo):
 
 @st.cache_data
 def obtener_noticias():
-    """Scrapea noticias sobre el dólar en Argentina con manejo de errores."""
+    """Busca noticias relacionadas al dólar en Argentina desde múltiples fuentes."""
     try:
-        url = "https://www.lanacion.com.ar/economia/dolar/"
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        fuentes = [
+            {"nombre": "La Nación", "url": "https://www.lanacion.com.ar/economia/dolar/"},
+            {"nombre": "Infobae", "url": "https://www.infobae.com/economia/"},
+            {"nombre": "Ámbito", "url": "https://www.ambito.com/contenidos/dolar.html"}
+        ]
         noticias = []
 
-        for item in soup.find_all('article', limit=10):
-            titulo = item.find('h2')
-            enlace = item.find('a')
-            fecha = item.find('time')
-            fuente = "La Nación"
-            if titulo and enlace:
-                noticias.append({
-                    'titulo': titulo.get_text(strip=True),
-                    'enlace': enlace['href'],
-                    'fecha': fecha.get_text(strip=True) if fecha else "Fecha no disponible",
-                    'fuente': fuente
-                })
-
+        for fuente in fuentes:
+            response = requests.get(fuente["url"])
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            for item in soup.find_all('article', limit=5):
+                titulo = item.find('h2') or item.find('a')
+                enlace = item.find('a')
+                fecha = item.find('time')
+                
+                if titulo and enlace:
+                    noticias.append({
+                        'titulo': titulo.get_text(strip=True),
+                        'enlace': enlace['href'] if enlace['href'].startswith('http') else fuente["url"] + enlace['href'],
+                        'fecha': fecha.get_text(strip=True) if fecha else "Fecha no disponible",
+                        'fuente': fuente["nombre"]
+                    })
+        
         return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
     except Exception as e:
         return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
