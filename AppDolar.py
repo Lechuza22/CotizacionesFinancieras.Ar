@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# Configurar título de la página
+# Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵")
 
 # Archivo donde guardamos el historial
@@ -27,14 +27,11 @@ def guardar_historial(tipo, compra, venta):
     new_data = pd.DataFrame([[now, tipo, compra, venta]], columns=["Fecha", "Tipo", "Compra", "Venta"])
 
     try:
-        # Cargar historial previo si existe
         historial = pd.read_csv(HISTORIAL_FILE)
         historial = pd.concat([historial, new_data], ignore_index=True)
     except FileNotFoundError:
-        # Si el archivo no existe, crearlo con los nuevos datos
         historial = new_data
     
-    # Guardar de nuevo el historial
     historial.to_csv(HISTORIAL_FILE, index=False)
 
 # Función para leer el historial guardado
@@ -44,6 +41,10 @@ def leer_historial(tipo):
         return historial[historial["Tipo"] == tipo]
     except FileNotFoundError:
         return None
+
+# Sidebar con opciones
+st.sidebar.title("📌 Menú")
+menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Consultar precio", "Ver historial"])
 
 # Diccionario de tipos de dólar y sus valores en la API
 tipos_dolar = {
@@ -55,42 +56,58 @@ tipos_dolar = {
     "Bolsa (MEP)": "bolsa"
 }
 
-# Selección del tipo de dólar
-tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+# =========================
+# 🚀 OPCIÓN: CONSULTAR PRECIO
+# =========================
+if menu_seleccionado == "Consultar precio":
+    st.title("💵 Precio del dólar Hoy")
 
-if st.button("Consultar precio"):
-    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
 
-    if "compra" in datos and "venta" in datos:
-        st.success(f"💰 **Compra:** ${datos['compra']}")
-        st.error(f"📈 **Venta:** ${datos['venta']}")
+    if st.button("Consultar precio"):
+        datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
 
-        # Guardar los datos en el historial
-        guardar_historial(tipo_dolar, datos['compra'], datos['venta'])
-    
+        if "compra" in datos and "venta" in datos:
+            st.success(f"💰 **Compra:** ${datos['compra']}")
+            st.error(f"📈 **Venta:** ${datos['venta']}")
+
+            # Guardar los datos en el historial
+            guardar_historial(tipo_dolar, datos['compra'], datos['venta'])
+        
+        else:
+            st.warning("⚠️ No se pudieron obtener los datos del dólar.")
+
+# =========================
+# 📊 OPCIÓN: VER HISTORIAL
+# =========================
+elif menu_seleccionado == "Ver historial":
+    st.title("📊 Historial de precios del dólar")
+
+    tipo_dolar_historial = st.selectbox("Seleccione el tipo de dólar para ver el historial:", list(tipos_dolar.keys()))
+
+    historial_data = leer_historial(tipo_dolar_historial)
+    if historial_data is not None and not historial_data.empty:
+        st.subheader(f"📈 Evolución del dólar {tipo_dolar_historial}")
+
+        # Convertir la columna de fecha a tipo datetime
+        historial_data["Fecha"] = pd.to_datetime(historial_data["Fecha"])
+        
+        # Graficar la evolución del dólar
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(historial_data["Fecha"], historial_data["Compra"], label="Compra", color="green", marker="o")
+        ax.plot(historial_data["Fecha"], historial_data["Venta"], label="Venta", color="red", marker="o")
+        ax.set_xlabel("Fecha")
+        ax.set_ylabel("Precio ($)")
+        ax.set_title(f"Evolución del dólar {tipo_dolar_historial}")
+        ax.legend()
+        ax.grid(True)
+        
+        # Mostrar gráfico en Streamlit
+        st.pyplot(fig)
+
+        # Mostrar tabla con el historial de datos
+        st.dataframe(historial_data)
+
     else:
-        st.warning("⚠️ No se pudieron obtener los datos del dólar.")
-
-# Mostrar el historial en un gráfico
-historial_data = leer_historial(tipo_dolar)
-if historial_data is not None and not historial_data.empty:
-    st.subheader(f"📊 Evolución del dólar {tipo_dolar}")
-
-    # Convertir la columna de fecha a tipo datetime
-    historial_data["Fecha"] = pd.to_datetime(historial_data["Fecha"])
-    
-    # Graficar la evolución del dólar
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(historial_data["Fecha"], historial_data["Compra"], label="Compra", color="green", marker="o")
-    ax.plot(historial_data["Fecha"], historial_data["Venta"], label="Venta", color="red", marker="o")
-    ax.set_xlabel("Fecha")
-    ax.set_ylabel("Precio ($)")
-    ax.set_title(f"Evolución del dólar {tipo_dolar}")
-    ax.legend()
-    ax.grid(True)
-    
-    # Mostrar gráfico en Streamlit
-    st.pyplot(fig)
-else:
-    st.info("📉 No hay datos históricos para mostrar. Consulta el precio para comenzar a registrar datos.")
+        st.info("📉 No hay datos históricos para mostrar. Consulta el precio para comenzar a registrar datos.")
 
