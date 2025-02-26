@@ -104,7 +104,49 @@ def mostrar_precios():
         )
     else:
         st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
+## VARIACIONESSSSSSS
+def mostrar_variacion():
+    st.title("📊 Variación de Cotizaciones respecto al Oficial")
 
+    precios = {}
+
+    for nombre, tipo in tipos_dolar.items():
+        datos = obtener_precio_dolar(tipo)
+        if "venta" in datos:
+            precios[nombre] = datos["venta"]
+    
+    if "Oficial" in precios:
+        oficial = precios["Oficial"]
+        variaciones = {nombre: ((precio / oficial) - 1) * 100 for nombre, precio in precios.items() if precio}
+
+        df_variaciones = pd.DataFrame({
+            "Tipo de Dólar": list(variaciones.keys()),
+            "Variación %": list(variaciones.values()),
+            "Precio": [precios[nombre] for nombre in variaciones.keys()]
+        })
+
+        # Crear el gráfico
+        fig = px.scatter(
+            df_variaciones,
+            x="Precio",
+            y="Tipo de Dólar",
+            size="Precio",
+            color="Variación %",
+            text="Precio",
+            hover_data=["Variación %"],
+            title="Variación de Cotizaciones respecto al Dólar Oficial",
+            size_max=15,
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+
+        fig.update_layout(
+            xaxis_title="Precio en $", 
+            yaxis_title="Tipo de Dólar"
+        )
+
+        st.plotly_chart(fig)
+    else:
+        st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial.")
 
 # =========================
 # 💱 CONVERTIR MONEDAS
