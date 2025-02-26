@@ -1,62 +1,32 @@
 import streamlit as st
-import requests
+import http.client
+import json
 
-def obtener_dolar(tipo):
-    url = f"https://dolarapi.com/v1/dolares/{tipo}"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException:
-        return None
+# Configurar título de la página
+st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵")
 
-# Configurar el icono y el título de la pestaña
-st.set_page_config(page_title="Dólar Argentina", page_icon="💲")
+# Título de la app
+st.title("💵 Precio del dólar Hoy")
 
-st.title("Dólar en Argentina 🇦🇷")
+# Función para obtener el precio del dólar
+def obtener_precio_dolar(tipo):
+    conn = http.client.HTTPSConnection("dolarapi.com")
+    conn.request("GET", f"/v1/dolares/{tipo}")
+    res = conn.getresponse()
+    data = res.read()
+    conn.close()
+    
+    return json.loads(data.decode("utf-8"))
 
-def mostrar_dolar(tipo, nombre):
-    st.subheader(f"Dólar {nombre} 💰")
-    precio = obtener_dolar(tipo)
-    if precio and "compra" in precio and "venta" in precio:
-        compra = precio["compra"]
-        venta = precio["venta"]
-        
-        st.markdown(
-            f"""
-            <div style='background-color:#4CAF50; padding:10px; border-radius:5px; color:white; font-size:18px; text-align:center;'>
-                <strong>Compra:</strong> {compra} ARS
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        
-        st.markdown(
-            f"""
-            <div style='background-color:#F44336; padding:10px; border-radius:5px; color:white; font-size:18px; text-align:center;'>
-                <strong>Venta:</strong> {venta} ARS
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+# Botones para seleccionar el tipo de dólar
+tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", ["Blue"])
+
+if st.button("Consultar precio"):
+    datos = obtener_precio_dolar("blue")
+
+    if "compra" in datos and "venta" in datos:
+        st.success(f"💰 **Compra:** ${datos['compra']}")
+        st.error(f"📈 **Venta:** ${datos['venta']}")
     else:
-        st.error(f"No se pudieron obtener datos para el dólar {nombre}.")
-
-# Crear botones para cada tipo de dólar
-if st.button("Dólar Oficial 💰"):
-    mostrar_dolar("oficial", "Oficial")
-
-if st.button("Dólar Blue 💰"):
-    mostrar_dolar("blue", "Blue")
-
-if st.button("Dólar CCL 💰"):
-    mostrar_dolar("contadoconliqui", "CCL")
-
-if st.button("Dólar Tarjeta 💳"):
-    mostrar_dolar("tarjeta", "Tarjeta")
-
-if st.button("Dólar Cripto 🪙"):
-    mostrar_dolar("cripto", "Cripto")
-
-st.caption("Fuente: DolarAPI")
+        st.warning("⚠️ No se pudieron obtener los datos del dólar.")
 
