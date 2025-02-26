@@ -94,6 +94,7 @@ def obtener_datos_dolar_blue():
     
     df = pd.DataFrame(rows, columns=headers)
     df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y', errors='coerce')
+    df['Compra'] = pd.to_numeric(df['Compra'].str.replace(',', ''), errors='coerce')
     df['Venta'] = pd.to_numeric(df['Venta'].str.replace(',', ''), errors='coerce')
     
     df.dropna(inplace=True)
