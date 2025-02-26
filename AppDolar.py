@@ -68,44 +68,25 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 ## Predicciones
 
-@st.cache_data
 def cargar_datos():
-    """Carga el archivo CSV con los datos del dólar blue y ajusta el índice temporal."""
+    """Carga y procesa el archivo CSV."""
     try:
         df = pd.read_csv("Bluex12.csv", encoding="utf-8")
-        st.write("### Vista previa de los datos:")
-        st.write(df.head())
-        
-        # Verificar columnas disponibles
-        st.write("### Columnas en el archivo CSV:")
-        st.write(list(df.columns))
-        
-        if 'category' not in df.columns:
-            raise ValueError("La columna 'category' no se encuentra en el archivo CSV.")
-        if 'valor' not in df.columns:
-            raise ValueError("La columna 'valor' no se encuentra en el archivo CSV. Verifique los nombres de las columnas.")
-        
-        # Convertir las columnas necesarias
-        df['category'] = pd.to_numeric(df['category'], errors='coerce')
-        df = df.dropna(subset=['valor'], how='any')
-        if df.empty:
-            st.error("El DataFrame está vacío después de eliminar valores NaN en 'valor'.")
-            return None
-        df['category'] = df['category'].astype(int)
-        df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
+        df['category'] = pd.to_datetime(df['category'], errors='coerce')
         df.set_index('category', inplace=True)
+        df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
+        df = df.dropna()  # Eliminar filas con valores NaN
         return df
     except Exception as e:
         st.error(f"Error al cargar los datos: {e}")
         return None
 
-@st.cache_data
 def encontrar_mejores_hiperparametros(serie):
-    """Encuentra los mejores hiperparámetros para el modelo ARIMA usando una búsqueda de cuadrícula."""
+    """Encuentra los mejores hiperparámetros para ARIMA."""
     p = d = q = range(0, 3)
     pdq = list(itertools.product(p, d, q))
     mejor_aic = float("inf")
-    mejor_pdq = None
+    mejor_pdq = (1, 1, 1)
     for param in pdq:
         try:
             modelo = ARIMA(serie, order=param)
@@ -115,38 +96,25 @@ def encontrar_mejores_hiperparametros(serie):
                 mejor_pdq = param
         except:
             continue
-    return mejor_pdq if mejor_pdq else (1, 1, 1)
+    return mejor_pdq
 
 def predecir_dolar_blue(df, dias_prediccion):
-    """Realiza la predicción del dólar blue usando el mejor modelo ARIMA."""
+    """Predice el valor del dólar blue usando ARIMA."""
     df = df.sort_index()
     serie = df['valor']
     mejores_parametros = encontrar_mejores_hiperparametros(serie)
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    if df is None or df.empty:
-        st.error("El DataFrame está vacío o no se cargó correctamente.")
-        return None
-        raise ValueError("El DataFrame está vacío después de la carga de datos.")
-    if df.index.empty or len(df) == 0:
-        st.error("El DataFrame está vacío después de la carga de datos.")
-        return None
-    
-        ultimo_indice = 0
-    else:
-        ultimo_indice = int(df.index[-1]) if not df.index.empty else 1
-    if pd.isna(ultimo_indice):
-        raise ValueError("El índice 'category' contiene valores NaN o no es válido.")
-    categorias_prediccion = list(range(int(ultimo_indice) + 1, int(ultimo_indice) + 1 + dias_prediccion))
-    df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción valor': predicciones})
+    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion)
+    df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
     df_predicciones['Variación %'] = (df_predicciones['Predicción valor'].pct_change()) * 100
     return df_predicciones
 
 def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
     df = cargar_datos()
-    if df is not None:
+    if df is not None and not df.empty:
         dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 10, 15, 30])
         df_predicciones = predecir_dolar_blue(df, dias_prediccion)
         st.subheader(f"Predicción para los próximos {dias_prediccion} días")
@@ -159,11 +127,10 @@ def mostrar_prediccion():
         st.dataframe(df_predicciones_styled)
         
         # Graficar los datos históricos y las predicciones
-        fig = px.line(df_predicciones, x='category', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 
 
