@@ -32,7 +32,6 @@ def obtener_precio_dolar(tipo):
     except Exception as e:
         return {"error": f"Error al obtener datos: {e}"}
 
-@st.cache_data
 def obtener_noticias():
     """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
     try:
@@ -51,7 +50,6 @@ def obtener_noticias():
         return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
     except Exception as e:
         return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
-
 # Diccionario con los tipos de dólar
 tipos_dolar = {
     "Mayorista": "mayorista",
@@ -249,7 +247,13 @@ def convertir_monedas():
 # =========================
 def mostrar_noticias():
     st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
-    noticias = obtener_noticias()
+    if st.button("🔄 Actualizar Noticias"):
+        noticias = obtener_noticias()
+    else:
+        noticias = obtener_noticias()
+    
+    fecha_hoy = datetime.now().strftime("%d/%m/%Y")
+    st.write(f"📅 **Última actualización:** {fecha_hoy}")
     
     for noticia in noticias:
         st.write(f"**{noticia['titulo']}**")
