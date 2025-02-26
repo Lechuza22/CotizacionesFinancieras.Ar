@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
+import itertools
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
@@ -67,73 +68,69 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 ## Predicciones
 
-def obtener_datos_dolar_blue():
-    url = "https://dolarhoy.com/historico-dolar-blue"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
-    }
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code != 200:
-        st.error(f"⚠️ No se pudo obtener los datos del dólar blue. Código de estado: {response.status_code}")
+@st.cache_data
+def cargar_datos():
+    """Carga el archivo CSV con los datos del dólar blue."""
+    try:
+        df = pd.read_csv("Bluex12.csv")
+        df['Fecha'] = pd.to_datetime(df['Fecha'])
+        df.set_index('Fecha', inplace=True)
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos: {e}")
         return None
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    tabla = soup.find('table')
-    
-    if not tabla:
-        st.error("⚠️ No se encontró la tabla con datos históricos en la página. Puede haber cambiado el diseño del sitio.")
-        return None
-    
-    headers = [header.text.strip() for header in tabla.find_all('th')]
-    rows = []
-    for row in tabla.find_all('tr')[1:]:
-        cols = row.find_all('td')
-        rows.append([col.text.strip() for col in cols])
-    
-    if not rows:
-        st.error("⚠️ No se encontraron datos en la tabla de la página web.")
-        return None
-    
-    df = pd.DataFrame(rows, columns=headers)
-    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y', errors='coerce')
-    df['Compra'] = pd.to_numeric(df['Compra'].str.replace(',', '').str.replace('ARS', '').str.strip(), errors='coerce')
-    df['Venta'] = pd.to_numeric(df['Venta'].str.replace(',', '').str.replace('ARS', '').str.strip(), errors='coerce')
-    
-    df.dropna(inplace=True)
-    return df
+
+@st.cache_data
+def encontrar_mejores_hiperparametros(serie):
+    """Encuentra los mejores hiperparámetros para el modelo ARIMA usando una búsqueda de cuadrícula."""
+    p = d = q = range(0, 3)
+    pdq = list(itertools.product(p, d, q))
+    mejor_aic = float("inf")
+    mejor_pdq = None
+    for param in pdq:
+        try:
+            modelo = ARIMA(serie, order=param)
+            modelo_fit = modelo.fit()
+            if modelo_fit.aic < mejor_aic:
+                mejor_aic = modelo_fit.aic
+                mejor_pdq = param
+        except:
+            continue
+    return mejor_pdq
 
 def predecir_dolar_blue(df, dias_prediccion):
-    df = df.sort_values('Fecha')
-    df.set_index('Fecha', inplace=True)
+    """Realiza la predicción del dólar blue usando el mejor modelo ARIMA."""
+    df = df.sort_index()
     serie = df['Venta']
-    modelo = ARIMA(serie, order=(5, 1, 0))
+    mejores_parametros = encontrar_mejores_hiperparametros(serie)
+    modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    fechas_prediccion = pd.date_range(start=serie.index[-1] + pd.Timedelta(days=1), periods=dias_prediccion)
+    fechas_prediccion = pd.date_range(start=serie.index[-1] + timedelta(days=1), periods=dias_prediccion)
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Venta': predicciones})
+    df_predicciones['Variación %'] = (df_predicciones['Predicción Venta'].pct_change()) * 100
     return df_predicciones
 
 def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
-    df = obtener_datos_dolar_blue()
-    if df is not None and not df.empty:
-        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [5, 10, 15, 30])
+    df = cargar_datos()
+    if df is not None:
+        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 10, 15, 30])
         df_predicciones = predecir_dolar_blue(df, dias_prediccion)
         st.subheader(f"Predicción para los próximos {dias_prediccion} días")
-        st.dataframe(df_predicciones)
-        plt.figure(figsize=(10, 5))
-        plt.plot(df.index, df['Venta'], label='Histórico')
-        plt.plot(df_predicciones['Fecha'], df_predicciones['Predicción Venta'], label='Predicción', linestyle='--')
-        plt.xlabel('Fecha')
-        plt.ylabel('Precio de Venta')
-        plt.title('Predicción del Dólar Blue')
-        plt.legend()
-        st.pyplot(plt)
+        
+        # Mostrar tabla con variación en color
+        def resaltar_variacion(val):
+            color = 'green' if val > 0 else 'red' if val < 0 else 'black'
+            return f'color: {color}'
+        df_predicciones_styled = df_predicciones.style.applymap(resaltar_variacion, subset=['Variación %'])
+        st.dataframe(df_predicciones_styled)
+        
+        # Graficar los datos históricos y las predicciones
+        fig = px.line(df_predicciones, x='Fecha', y='Predicción Venta', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 # =========================
 # 💵 MOSTRAR PRECIOS
