@@ -68,7 +68,7 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 ## Predicciones
 
 def obtener_datos_dolar_blue():
-    url = "https://www.ambito.com/contenidos/dolar-informal-historico.html"
+    url = "https://dolarhoy.com/historico-dolar-blue"
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
     
     if response.status_code != 200:
@@ -76,13 +76,7 @@ def obtener_datos_dolar_blue():
         return None
     
     soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Prueba encontrar la tabla con diferentes métodos
     tabla = soup.find('table')
-    if not tabla:
-        tablas = soup.find_all('table')
-        if tablas:
-            tabla = tablas[0]  # Intenta con la primera tabla si hay más de una
     
     if not tabla:
         st.error("⚠️ No se encontró la tabla con datos históricos en la página. Puede haber cambiado el diseño del sitio.")
@@ -134,6 +128,7 @@ def mostrar_prediccion():
         st.pyplot(plt)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 # =========================
 # 💵 MOSTRAR PRECIOS
