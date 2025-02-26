@@ -72,7 +72,7 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 def cargar_datos():
     """Carga el archivo CSV con los datos del dólar blue y ajusta el índice temporal."""
     try:
-        df = pd.read_csv("/mnt/data/Bluex12.csv", encoding="utf-8")
+        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
         st.write("### Vista previa de los datos:")
         st.write(df.head())
         
