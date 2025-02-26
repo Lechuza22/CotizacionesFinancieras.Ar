@@ -20,17 +20,6 @@ st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", la
 # 🚀 FUNCIONES MEJORADAS
 # =========================
 @st.cache_data
-def obtener_precio_dolar(tipo):
-    """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
-    try:
-        conn = http.client.HTTPSConnection("dolarapi.com")
-        conn.request("GET", f"/v1/dolares/{tipo}")
-        res = conn.getresponse()
-        data = res.read()
-        conn.close()
-        return json.loads(data.decode("utf-8"))
-    except Exception as e:
-        return {"error": f"Error al obtener datos: {e}"}
 
 def obtener_noticias():
     """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
@@ -50,20 +39,6 @@ def obtener_noticias():
         return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
     except Exception as e:
         return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
-# Diccionario con los tipos de dólar
-tipos_dolar = {
-    "Mayorista": "mayorista",
-    "Oficial": "oficial",
-    "MEP": "bolsa",
-    "CCL": "contadoconliqui",
-    "Cripto": "cripto",
-    "Blue": "blue",
-    "Tarjeta": "tarjeta"
-}
-
-# Obtener la fecha y hora actual
-fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
 ## Predicciones
 
 def actualizar_datos_blue():
@@ -138,20 +113,44 @@ def mostrar_prediccion():
 # =========================
 # 💵 MOSTRAR PRECIOS
 # =========================
+def obtener_precio_dolar(tipo):
+    """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
+    try:
+        conn = http.client.HTTPSConnection("dolarapi.com")
+        conn.request("GET", f"/v1/dolares/{tipo}")
+        res = conn.getresponse()
+        data = res.read()
+        conn.close()
+        return json.loads(data.decode("utf-8"))
+    except Exception as e:
+        return {"error": f"Error al obtener datos: {e}"}
+
+# Diccionario con los tipos de dólar
+tipos_dolar = {
+    "Mayorista": "mayorista",
+    "Oficial": "oficial",
+    "MEP": "bolsa",
+    "CCL": "contadoconliqui",
+    "Cripto": "cripto",
+    "Blue": "blue",
+    "Tarjeta": "tarjeta"
+}
+
 def mostrar_precios():
     st.title("💵 Precio del dólar Hoy")
-
-    # Selector para elegir el tipo de dólar a mostrar
+    
     tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
-
-    # Obtener el precio del tipo de dólar seleccionado
-    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
-
+    
+    if st.button("🔄 Actualizar Precio"):
+        datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+        st.session_state[f"precio_{tipo_dolar}"] = datos  # Guardar en la sesión
+    
+    datos = st.session_state.get(f"precio_{tipo_dolar}", obtener_precio_dolar(tipos_dolar[tipo_dolar]))
+    
     if "compra" in datos and "venta" in datos:
         compra = datos["compra"]
         venta = datos["venta"]
-
-        # Mostrar cuadro con compra y venta en colores
+        
         st.markdown(
             f"""
             <div style="
@@ -169,17 +168,17 @@ def mostrar_precios():
             """,
             unsafe_allow_html=True
         )
-
-        # Mostrar fecha de actualización y fuente
+        
         st.markdown(
             f"""
-            📅 **Última actualización:** {fecha_actualizacion}  
+            📅 **Última actualización:** {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}  
             📌 **Fuente:** [DolarAPI](https://dolarapi.com)
             """,
             unsafe_allow_html=True
         )
     else:
         st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
+
 ## VARIACIONESSSSSSS
 def mostrar_variacion():
     st.title("📊 Variación de Cotizaciones respecto al Oficial")
