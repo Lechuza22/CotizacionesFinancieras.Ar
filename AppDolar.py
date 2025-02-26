@@ -60,6 +60,41 @@ tipos_dolar = {
 fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 # =========================
+# 💵 MOSTRAR PRECIOS
+# =========================
+def mostrar_precios():
+    st.title("💵 Precio del dólar Hoy")
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+    
+    if "compra" in datos and "venta" in datos:
+        compra, venta = datos["compra"], datos["venta"]
+        st.success(f"💰 Compra: ${compra} | 📈 Venta: ${venta}")
+    else:
+        st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
+
+# =========================
+# 💱 CONVERTIR MONEDAS
+# =========================
+def convertir_monedas():
+    st.title("💱 Convertidor de Moneda")
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+
+    if "compra" in datos and "venta" in datos:
+        compra, venta = datos["compra"], datos["venta"]
+        monto = st.number_input("Ingrese el monto a convertir:", min_value=0.0, format="%.2f")
+        conversion = st.radio("Seleccione el tipo de conversión:", ["Pesos a Dólares", "Dólares a Pesos"])
+
+        if st.button("Convertir"):
+            if conversion == "Pesos a Dólares":
+                resultado = monto / venta
+                st.success(f"💵 {monto} ARS equivale a **{resultado:.2f} USD**")
+            else:
+                resultado = monto * compra
+                st.success(f"💵 {monto} USD equivale a **{resultado:.2f} ARS**")
+
+# =========================
 # 📊 MOSTRAR VARIACIÓN DE COTIZACIONES
 # =========================
 def mostrar_variacion():
