@@ -33,51 +33,41 @@ st.sidebar.title("📌 Menú")
 menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones"])
 
 # =========================
-# 🚀 OPCIÓN: MOSTRAR PRECIOS (CON TARJETAS COLORIDAS)
+# 🚀 OPCIÓN: MOSTRAR PRECIOS (CON SELECCIÓN DE TIPO Y COLORES)
 # =========================
 if menu_seleccionado == "Precios":
-    st.title("💵 Precios del dólar Hoy")
+    st.title("💵 Precio del dólar Hoy")
 
-    col1, col2, col3 = st.columns(3)
-    
-    precios = {}
+    # Selector para elegir el tipo de dólar a mostrar
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
 
-    colores = {
-        "Mayorista": "#FF5733",
-        "Oficial": "#33FF57",
-        "MEP": "#3385FF",
-        "CCL": "#FF33E3",
-        "Cripto": "#FFC733",
-        "Blue": "#33FFF3",
-        "Tarjeta": "#FF9033"
-    }
+    # Obtener el precio del tipo de dólar seleccionado
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
 
-    for i, (nombre, tipo) in enumerate(tipos_dolar.items()):
-        datos = obtener_precio_dolar(tipo)
-        if "venta" in datos:
-            precios[nombre] = datos["venta"]
-            precio_str = f"💰 **${datos['venta']}**"
-        else:
-            precios[nombre] = None
-            precio_str = "❌ No disponible"
+    if "compra" in datos and "venta" in datos:
+        compra = datos["compra"]
+        venta = datos["venta"]
 
-        with (col1 if i % 3 == 0 else col2 if i % 3 == 1 else col3):
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: {colores[nombre]};
-                    padding: 15px;
-                    border-radius: 10px;
-                    text-align: center;
-                    font-size: 18px;
-                    font-weight: bold;
-                    color: white;
-                ">
-                    {nombre}<br>{precio_str}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        # Mostrar cuadro con compra y venta en colores
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #222831;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+                font-size: 20px;
+                font-weight: bold;
+                color: white;
+            ">
+                <span style="color: #33FF57;">💰 Compra: ${compra}</span><br>
+                <span style="color: #FF5733;">📈 Venta: ${venta}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
 
 # =========================
 # 📊 OPCIÓN: VARIACIÓN RESPECTO AL OFICIAL (GRÁFICO SIMILAR AL DE LA IMAGEN)
