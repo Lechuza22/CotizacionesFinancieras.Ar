@@ -6,6 +6,7 @@ import plotly.express as px
 from datetime import datetime
 from bs4 import BeautifulSoup
 import requests
+from googlesearch import searc
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
