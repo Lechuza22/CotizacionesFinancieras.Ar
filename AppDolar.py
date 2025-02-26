@@ -3,6 +3,7 @@ import http.client
 import json
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
@@ -28,12 +29,15 @@ tipos_dolar = {
     "Tarjeta": "tarjeta"
 }
 
+# Obtener la fecha y hora actual
+fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
 # Sidebar con opciones
 st.sidebar.title("📌 Menú")
 menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones"])
 
 # =========================
-# 🚀 OPCIÓN: MOSTRAR PRECIOS (CON SELECCIÓN DE TIPO Y COLORES)
+# 🚀 OPCIÓN: MOSTRAR PRECIOS (CON SELECCIÓN DE TIPO, FECHA Y COLORES)
 # =========================
 if menu_seleccionado == "Precios":
     st.title("💵 Precio del dólar Hoy")
@@ -63,6 +67,15 @@ if menu_seleccionado == "Precios":
                 <span style="color: #33FF57;">💰 Compra: ${compra}</span><br>
                 <span style="color: #FF5733;">📈 Venta: ${venta}</span>
             </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Mostrar fecha de actualización y fuente
+        st.markdown(
+            f"""
+            📅 **Última actualización:** {fecha_actualizacion}  
+            📌 **Fuente:** [DolarAPI](https://dolarapi.com)
             """,
             unsafe_allow_html=True
         )
@@ -107,7 +120,19 @@ elif menu_seleccionado == "Variación de Cotizaciones":
         )
 
         fig.update_traces(textposition="middle right")
-        fig.update_layout(xaxis_title="Precio en $", yaxis_title="Tipo de Dólar")
+        fig.update_layout(
+            xaxis_title="Precio en $", 
+            yaxis_title="Tipo de Dólar",
+            annotations=[
+                dict(
+                    text=f"📅 Última actualización: {fecha_actualizacion}<br>📌 Fuente: <a href='https://dolarapi.com' target='_blank'>DolarAPI</a>",
+                    xref="paper", yref="paper",
+                    x=0.95, y=-0.2, 
+                    showarrow=False,
+                    font=dict(size=12, color="gray")
+                )
+            ]
+        )
 
         st.plotly_chart(fig)
     else:
