@@ -10,10 +10,6 @@ import requests
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
-# =========================
-# 🚀 FUNCIONES PRINCIPALES
-# =========================
-
 # Función para obtener los precios de los diferentes tipos de dólar
 def obtener_precio_dolar(tipo):
     conn = http.client.HTTPSConnection("dolarapi.com")
@@ -23,58 +19,153 @@ def obtener_precio_dolar(tipo):
     conn.close()
     return json.loads(data.decode("utf-8"))
 
-# Función para obtener noticias sobre el dólar en Argentina desde varios medios
+# Función para obtener las noticias más recientes sobre el dólar en Argentina
 def obtener_noticias():
-    fuentes = {
-        "La Nación": "https://www.lanacion.com.ar/economia/dolar/",
-        "Clarín": "https://www.clarin.com/tema/dolar.html",
-        "Infobae": "https://www.infobae.com/economia/dolar/",
-        "Ámbito Financiero": "https://www.ambito.com/contenidos/dolar.html"
-    }
-
+    url = "https://www.lanacion.com.ar/economia/dolar/"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
     noticias = []
+    
+    for item in soup.find_all('article', limit=10):
+        titulo = item.find('h2').get_text(strip=True)
+        enlace = item.find('a')['href']
+        noticias.append({'titulo': titulo, 'enlace': enlace})
+    
+    return noticias
 
-    for fuente, url in fuentes.items():
-        try:
-            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-            soup = BeautifulSoup(response.text, 'html.parser')
+# Diccionario con los tipos de dólar
+tipos_dolar = {
+    "Mayorista": "mayorista",
+    "Oficial": "oficial",
+    "MEP": "bolsa",
+    "CCL": "contadoconliqui",
+    "Cripto": "cripto",
+    "Blue": "blue",
+    "Tarjeta": "tarjeta"
+}
 
-            if "lanacion" in url:
-                articles = soup.find_all('article', limit=3)
-                for item in articles:
-                    titulo = item.find('h2').get_text(strip=True) if item.find('h2') else None
-                    enlace = item.find('a')['href'] if item.find('a') else None
-                    if titulo and enlace:
-                        noticias.append({"fuente": fuente, "titulo": titulo, "enlace": enlace})
+# Obtener la fecha y hora actual
+fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-            elif "clarin" in url:
-                articles = soup.find_all('h2', limit=3)
-                for item in articles:
-                    titulo = item.get_text(strip=True)
-                    enlace = item.find_parent('a')['href'] if item.find_parent('a') else None
-                    if titulo and enlace:
-                        noticias.append({"fuente": fuente, "titulo": titulo, "enlace": "https://www.clarin.com" + enlace})
+# =========================
+# 🚀 FUNCIONES PRINCIPALES
+# =========================
+def mostrar_precios():
+    st.title("💵 Precio del dólar Hoy")
 
-            elif "infobae" in url:
-                articles = soup.find_all('h2', limit=3)
-                for item in articles:
-                    titulo = item.get_text(strip=True)
-                    enlace = item.find_parent('a')['href'] if item.find_parent('a') else None
-                    if titulo and enlace:
-                        noticias.append({"fuente": fuente, "titulo": titulo, "enlace": enlace})
+    # Selector para elegir el tipo de dólar a mostrar
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
 
-            elif "ambito" in url:
-                articles = soup.find_all('h2', limit=3)
-                for item in articles:
-                    titulo = item.get_text(strip=True)
-                    enlace = item.find_parent('a')['href'] if item.find_parent('a') else None
-                    if titulo and enlace:
-                        noticias.append({"fuente": fuente, "titulo": titulo, "enlace": "https://www.ambito.com" + enlace})
+    # Obtener el precio del tipo de dólar seleccionado
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
 
-        except Exception as e:
-            st.warning(f"⚠️ No se pudo obtener noticias de {fuente}. Error: {e}")
+    if "compra" in datos and "venta" in datos:
+        compra = datos["compra"]
+        venta = datos["venta"]
 
-    return noticias[:10]  # Limitar a las 10 primeras noticias
+        # Mostrar cuadro con compra y venta en colores
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #222831;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+                font-size: 20px;
+                font-weight: bold;
+                color: white;
+            ">
+                <span style="color: #33FF57;">💰 Compra: ${compra}</span><br>
+                <span style="color: #FF5733;">📈 Venta: ${venta}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Mostrar fecha de actualización y fuente
+        st.markdown(
+            f"""
+            📅 **Última actualización:** {fecha_actualizacion}  
+            📌 **Fuente:** [DolarAPI](https://dolarapi.com)
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
+
+def mostrar_variacion():
+    st.title("📊 Variación de Cotizaciones respecto al Oficial")
+
+    precios = {}
+
+    for nombre, tipo in tipos_dolar.items():
+        datos = obtener_precio_dolar(tipo)
+        if "venta" in datos:
+            precios[nombre] = datos["venta"]
+    
+    if "Oficial" in precios:
+        oficial = precios["Oficial"]
+        variaciones = {nombre: ((precio / oficial) - 1) * 100 for nombre, precio in precios.items() if precio}
+
+        df_variaciones = pd.DataFrame({
+            "Tipo de Dólar": list(variaciones.keys()),
+            "Variación %": list(variaciones.values()),
+            "Precio": [precios[nombre] for nombre in variaciones.keys()]
+        })
+
+        # Crear el gráfico
+        fig = px.scatter(
+            df_variaciones,
+            x="Precio",
+            y="Tipo de Dólar",
+            size="Precio",
+            color="Variación %",
+            text="Precio",
+            hover_data=["Variación %"],
+            title="Variación de Cotizaciones respecto al Dólar Oficial",
+            size_max=15,
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+
+        fig.update_layout(
+            xaxis_title="Precio en $", 
+            yaxis_title="Tipo de Dólar"
+        )
+
+        st.plotly_chart(fig)
+    else:
+        st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial.")
+
+def convertir_monedas():
+    st.title("💱 Convertidor de Moneda")
+
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+
+    if "compra" in datos and "venta" in datos:
+        compra = datos["compra"]
+        venta = datos["venta"]
+
+        monto = st.number_input("Ingrese el monto a convertir:", min_value=0.0, format="%.2f")
+        conversion = st.radio("Seleccione el tipo de conversión:", ["Pesos a Dólares", "Dólares a Pesos"])
+
+        if st.button("Convertir"):
+            if conversion == "Pesos a Dólares":
+                resultado = monto / venta
+                st.success(f"💵 {monto} ARS equivale a **{resultado:.2f} USD**")
+            else:
+                resultado = monto * compra
+                st.success(f"💵 {monto} USD equivale a **{resultado:.2f} ARS**")
+
+def mostrar_noticias():
+    st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
+    
+    noticias = obtener_noticias()
+    if noticias:
+        for noticia in noticias:
+            st.markdown(f"🔹 [{noticia['titulo']}]({noticia['enlace']})")
+    else:
+        st.warning("⚠️ No se encontraron noticias recientes.")
 
 # =========================
 # 📌 MENÚ PRINCIPAL
@@ -84,77 +175,10 @@ if __name__ == "__main__":
     menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias"])
 
     if menu_seleccionado == "Precios":
-        st.title("💵 Precio del dólar Hoy")
-
-        tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list({
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.keys()))
-
-        datos = obtener_precio_dolar(tipo_dolar)
-
-        if "compra" in datos and "venta" in datos:
-            st.success(f"💰 **Compra:** ${datos['compra']}")
-            st.error(f"📈 **Venta:** ${datos['venta']}")
-
+        mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
-        st.title("📊 Variación de Cotizaciones respecto al Oficial")
-
-        precios = {nombre: obtener_precio_dolar(tipo)["venta"] for nombre, tipo in {
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.items()}
-
-        if "Oficial" in precios:
-            df_variaciones = pd.DataFrame({
-                "Tipo de Dólar": list(precios.keys()),
-                "Variación %": [(precio / precios["Oficial"] - 1) * 100 for precio in precios.values()],
-                "Precio": list(precios.values())
-            })
-
-            st.plotly_chart(px.scatter(df_variaciones, x="Precio", y="Tipo de Dólar", size="Precio", color="Variación %"))
-
+        mostrar_variacion()
     elif menu_seleccionado == "Convertir":
-        st.title("💱 Convertidor de Moneda")
-
-        tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list({
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.keys()))
-
-        datos = obtener_precio_dolar(tipo_dolar)
-
-        if "compra" in datos and "venta" in datos:
-            monto = st.number_input("Ingrese el monto a convertir:", min_value=0.0, format="%.2f")
-            conversion = st.radio("Seleccione el tipo de conversión:", ["Pesos a Dólares", "Dólares a Pesos"])
-
-            if conversion == "Pesos a Dólares":
-                st.success(f"💵 {monto} ARS equivale a **{monto / datos['venta']:.2f} USD**")
-            else:
-                st.success(f"💵 {monto} USD equivale a **{monto * datos['compra']:.2f} ARS**")
-
+        convertir_monedas()
     elif menu_seleccionado == "Novedades y Noticias":
-        st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
-
-        noticias = obtener_noticias()
-
-        if noticias:
-            for noticia in noticias:
-                st.markdown(f"🔹 [**{noticia['titulo']}**]({noticia['enlace']}) _(Fuente: {noticia['fuente']})_", unsafe_allow_html=True)
-        else:
-            st.warning("⚠️ No se encontraron noticias recientes.")
+        mostrar_noticias()
