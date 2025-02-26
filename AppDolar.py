@@ -3,10 +3,15 @@ import http.client
 import json
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
-from bs4 import BeautifulSoup
-import requests
+from datetime import datetime, timedelta
 import feedparser
+from sklearn.linear_model import LinearRegression
+import numpy as np
+import requests
+from bs4 import BeautifulSoup
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib.pyplot as plt
+
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
@@ -59,6 +64,54 @@ tipos_dolar = {
 
 # Obtener la fecha y hora actual
 fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+## Predicciones
+
+def obtener_datos_dolar_blue():
+    url = "https://www.ambito.com/contenidos/dolar-informal-historico.html"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    tabla = soup.find('table')
+    headers = [header.text for header in tabla.find_all('th')]
+    rows = []
+    for row in tabla.find_all('tr')[1:]:
+        cols = row.find_all('td')
+        rows.append([col.text for col in cols])
+    df = pd.DataFrame(rows, columns=headers)
+    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y')
+    df['Venta'] = df['Venta'].str.replace(',', '').astype(float)
+    return df
+
+def predecir_dolar_blue(df, dias_prediccion):
+    df = df.sort_values('Fecha')
+    df.set_index('Fecha', inplace=True)
+    serie = df['Venta']
+    modelo = ARIMA(serie, order=(5, 1, 0))
+    modelo_fit = modelo.fit()
+    predicciones = modelo_fit.forecast(steps=dias_prediccion)
+    fechas_prediccion = pd.date_range(start=serie.index[-1] + pd.Timedelta(days=1), periods=dias_prediccion)
+    df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Venta': predicciones})
+    return df_predicciones
+
+def mostrar_prediccion():
+    st.title("📈 Predicción del Dólar Blue")
+    df = obtener_datos_dolar_blue()
+    if df is not None and not df.empty:
+        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [5, 10, 15, 30])
+        df_predicciones = predecir_dolar_blue(df, dias_prediccion)
+        st.subheader(f"Predicción para los próximos {dias_prediccion} días")
+        st.dataframe(df_predicciones)
+        plt.figure(figsize=(10, 5))
+        plt.plot(df.index, df['Venta'], label='Histórico')
+        plt.plot(df_predicciones['Fecha'], df_predicciones['Predicción Venta'], label='Predicción', linestyle='--')
+        plt.xlabel('Fecha')
+        plt.ylabel('Precio de Venta')
+        plt.title('Predicción del Dólar Blue')
+        plt.legend()
+        st.pyplot(plt)
+    else:
+        st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 # =========================
 # 💵 MOSTRAR PRECIOS
@@ -188,8 +241,7 @@ def mostrar_noticias():
 # =========================
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
-    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias"])
-
+    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue"])
     if menu_seleccionado == "Precios":
         mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
@@ -198,3 +250,5 @@ if __name__ == "__main__":
         convertir_monedas()
     elif menu_seleccionado == "Novedades y Noticias":
         mostrar_noticias()
+    elif menu_seleccionado == "Predicción del Dólar Blue":
+        mostrar_prediccion()
