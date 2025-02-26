@@ -8,8 +8,8 @@ def obtener_dolar(tipo):
     conn = http.client.HTTPSConnection("dolarapi.com")
     conn.request("GET", f"/v1/dolares/{tipo}")
     res = conn.getresponse()
-    data = res.read()
-    return json.loads(data.decode("utf-8"))
+    data = res.read().decode("utf-8")
+    return json.loads(data)
 
 # Configurar el icono y el título de la pestaña
 st.set_page_config(page_title="Dólar Argentina", page_icon="💲")
@@ -19,13 +19,14 @@ st.title("Dólar en Argentina 🇦🇷")
 # Crear menú con botones
 def mostrar_precio():
     st.subheader("Precios del Dólar 💰")
-    opciones = ["Blue", "Contado con Liquidación", "Tarjeta", "Cripto", "Comparaciones"]
+    opciones = ["Oficial", "Blue", "CCL", "Tarjeta", "Cripto", "Comparaciones"]
     seleccion = st.selectbox("Seleccione un tipo de dólar:", opciones)
     
     if seleccion != "Comparaciones":
         tipo_api = {
+            "Oficial": "oficial",
             "Blue": "blue",
-            "Contado con Liquidación": "contadoconliqui",
+            "CCL": "contadoconliqui",
             "Tarjeta": "tarjeta",
             "Cripto": "cripto"
         }
@@ -52,10 +53,10 @@ def mostrar_precio():
                 unsafe_allow_html=True
             )
         else:
-            st.error("No se pudieron obtener datos del dólar seleccionado.")
+            st.error(f"No se pudieron obtener datos para el dólar {seleccion}.")
     else:
         st.subheader("Comparación de Precios del Dólar 📊")
-        tipos = {"Blue": "blue", "Contado con Liquidación": "contadoconliqui", "Tarjeta": "tarjeta", "Cripto": "cripto"}
+        tipos = {"Oficial": "oficial", "Blue": "blue", "CCL": "contadoconliqui", "Tarjeta": "tarjeta", "Cripto": "cripto"}
         datos = []
         for nombre, tipo in tipos.items():
             precio = obtener_dolar(tipo)
