@@ -50,3 +50,5 @@ Para la predicción del dólar blue:
 1. Instalar dependencias:
    ```bash
    pip install -r requirements.txt
+
+2. En Streamlit https://app-dolarbluehoy-cj6qwlmqwwgtkpkyzdkvz7.streamlit.app/ 
