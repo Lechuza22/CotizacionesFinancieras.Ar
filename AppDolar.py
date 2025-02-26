@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
 import itertools
+import re
+
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
