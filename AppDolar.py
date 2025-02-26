@@ -58,17 +58,22 @@ def obtener_datos_scraping():
     
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, "html.parser")
-        script_tag = soup.find("script", string=re.compile("\{"))  # Buscar el script con datos JSON
+        scripts = soup.find_all("script")  # Obtener todos los scripts de la página
         
-        if script_tag:
-            json_text = re.search(r'\[.*?\]', script_tag.string)
-            if json_text:
-                data = json.loads(json_text.group())
-                fechas = [datetime.strptime(item["x"], "%a %b %d %Y %H:%M:%S GMT%z (%Z)") for item in data]
-                valores = [item["y"] for item in data]
-                df = pd.DataFrame({"Fecha": fechas, "Venta": valores})
-                df.set_index("Fecha", inplace=True)
-                return df
+        for script in scripts:
+            if "x" in script.text and "y" in script.text:  # Buscar la estructura JSON con "x" y "y"
+                json_text = re.search(r'\[.*?\]', script.text, re.DOTALL)
+                if json_text:
+                    try:
+                        data = json.loads(json_text.group())
+                        fechas = [datetime.strptime(item["x"], "%a %b %d %Y %H:%M:%S GMT%z (%Z)") for item in data]
+                        valores = [item["y"] for item in data]
+                        df = pd.DataFrame({"Fecha": fechas, "Venta": valores})
+                        df.set_index("Fecha", inplace=True)
+                        return df
+                    except json.JSONDecodeError:
+                        st.error("⚠️ Error al decodificar el JSON de la página.")
+                        return None
         
         st.error("⚠️ No se encontró el JSON con los datos históricos en la página. Puede que la estructura haya cambiado.")
         st.text("Vista previa del HTML recibido:")
