@@ -76,9 +76,15 @@ def obtener_datos_dolar_blue():
         return None
     
     soup = BeautifulSoup(response.text, 'html.parser')
-    tabla = soup.find('table')
     
-    if tabla is None:
+    # Prueba encontrar la tabla con diferentes métodos
+    tabla = soup.find('table')
+    if not tabla:
+        tablas = soup.find_all('table')
+        if tablas:
+            tabla = tablas[0]  # Intenta con la primera tabla si hay más de una
+    
+    if not tabla:
         st.error("⚠️ No se encontró la tabla con datos históricos en la página. Puede haber cambiado el diseño del sitio.")
         return None
     
