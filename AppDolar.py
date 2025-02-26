@@ -99,7 +99,7 @@ def cargar_datos():
 @st.cache_data
 def encontrar_mejores_hiperparametros(serie):
     """Encuentra los mejores hiperparámetros para el modelo ARIMA usando una búsqueda de cuadrícula."""
-    p = d = q = range(0, 3)
+    p = d = q = range(1,1,1)
     pdq = list(itertools.product(p, d, q))
     mejor_aic = float("inf")
     mejor_pdq = None
