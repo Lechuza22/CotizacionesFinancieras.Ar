@@ -120,7 +120,10 @@ def predecir_dolar_blue(df, dias_prediccion):
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    categorias_prediccion = list(range(int(df.index[-1]) + 1, int(df.index[-1]) + 1 + dias_prediccion))
+    ultimo_indice = df.index[-1]
+    if pd.isna(ultimo_indice):
+        raise ValueError("El índice 'category' contiene valores NaN o no es válido.")
+    categorias_prediccion = list(range(int(ultimo_indice) + 1, int(ultimo_indice) + 1 + dias_prediccion))
     df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción valor': predicciones})
     df_predicciones['Variación %'] = (df_predicciones['Predicción valor'].pct_change()) * 100
     return df_predicciones
