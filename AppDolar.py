@@ -12,8 +12,6 @@ from bs4 import BeautifulSoup
 from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
 import itertools
-import re
-
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
@@ -50,73 +48,44 @@ def actualizar_datos_blue():
     else:
         st.warning("No se pudo obtener el precio del dólar blue.")
 
-def obtener_datos_scraping():
-    """Obtiene los datos históricos del dólar blue desde Dólar Hoy en formato JSON."""
-    url = "https://dolarhoy.com/historico-dolar-blue/dias_15"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, "html.parser")
-        scripts = soup.find_all("script")  # Obtener todos los scripts de la página
-        
-        for script in scripts:
-            if "x" in script.text and "y" in script.text:  # Buscar la estructura JSON con "x" y "y"
-                json_text = re.search(r'\[.*?\]', script.text, re.DOTALL)
-                if json_text:
-                    try:
-                        data = json.loads(json_text.group())
-                        fechas = [datetime.strptime(item["x"], "%a %b %d %Y %H:%M:%S GMT%z (%Z)") for item in data]
-                        valores = [item["y"] for item in data]
-                        df = pd.DataFrame({"Fecha": fechas, "Venta": valores})
-                        df.set_index("Fecha", inplace=True)
-                        return df
-                    except json.JSONDecodeError:
-                        st.error("⚠️ Error al decodificar el JSON de la página.")
-                        return None
-        
-        st.error("⚠️ No se encontró el JSON con los datos históricos en la página. Puede que la estructura haya cambiado.")
-        st.text("Vista previa del HTML recibido:")
-        st.code(soup.prettify()[:1000])  # Muestra los primeros 1000 caracteres del HTML para inspección
-    else:
-        st.error(f"⚠️ Error al acceder a la página. Código de estado: {response.status_code}")
-    
-    return None
+def cargar_datos():
+    """Carga y procesa el archivo Bluex12.csv."""
+    try:
+        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
+        df['category'] = pd.to_datetime(df['category'], errors='coerce')
+        df.set_index('category', inplace=True)
+        df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
+        df = df.dropna()
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos: {e}")
+        return None
 
-def verificar_scraping():
-    """Verifica la disponibilidad de los datos al hacer scraping."""
-    df = obtener_datos_scraping()
-    if df is None or df.empty:
-        st.error("⚠️ No se pudo obtener datos históricos del dólar blue. Intente más tarde o verifique la fuente.")
-    else:
-        st.success("✅ Datos obtenidos correctamente.")
-        st.write(df.head())
-
-def predecir_dolar_blue(df, dias_prediccion):
-    """Predice el valor del dólar blue usando ARIMA."""
+def predecir_dolar_blue(df, horas_prediccion):
+    """Predice el valor del dólar blue usando ARIMA, tomando datos de la última semana."""
     df = df.sort_index()
-    serie = df['Venta']
+    ultima_fecha = df.index[-1]
+    df_reciente = df[df.index >= ultima_fecha - timedelta(days=7)]
+    serie = df_reciente['valor']
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
-    predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion, freq='D')
+    predicciones = modelo_fit.forecast(steps=horas_prediccion)
+    fechas_prediccion = pd.date_range(start=ultima_fecha + timedelta(hours=1), periods=horas_prediccion, freq='H')
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
     return df_predicciones
 
 def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
-    df = obtener_datos_scraping()
+    df = cargar_datos()
     if df is not None and not df.empty:
-        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 6, 12, 24, 36])
-        df_predicciones = predecir_dolar_blue(df, dias_prediccion)
-        st.subheader(f"Predicción para los próximos {dias_prediccion} días")
+        horas_prediccion = st.selectbox("Seleccione el horizonte de predicción (horas):", [3, 6, 12, 24, 36, 42, 72])
+        df_predicciones = predecir_dolar_blue(df, horas_prediccion)
+        st.subheader(f"Predicción para las próximas {horas_prediccion} horas")
         st.dataframe(df_predicciones)
-        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {horas_prediccion} horas")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
-
 
 def obtener_precio_dolar(tipo):
     """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
