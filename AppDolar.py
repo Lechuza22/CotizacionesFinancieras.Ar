@@ -31,7 +31,7 @@ def obtener_precio_dolar(tipo):
 def obtener_noticias():
     """Busca noticias sobre el dólar en Argentina mediante Google Search."""
     try:
-        query = "dólar Argentina site:lanacion.com.ar OR site:infobae.com OR site:ambito.com"
+        query = "dólar Argentina"
         noticias = []
 
         for url in search(query, num=10, stop=10, pause=2):
