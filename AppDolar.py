@@ -66,47 +66,57 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 ## Predicciones
 
+def actualizar_datos_blue():
+    """Actualiza el archivo Bluex12.csv con el precio más reciente del dólar blue."""
+    try:
+        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
+        df['category'] = pd.to_datetime(df['category'], errors='coerce')
+        df.set_index('category', inplace=True)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=['category', 'valor'])
+    except Exception as e:
+        st.error(f"Error al cargar el archivo de datos: {e}")
+        return
+    
+    # Obtener el precio actual del dólar blue
+    datos = obtener_precio_dolar("blue")
+    if "venta" in datos:
+        nuevo_valor = datos["venta"]
+        fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Verificar si ya se registró el valor del día
+        if not df.empty and fecha_actual[:10] in df.index.strftime('%Y-%m-%d').values:
+            st.info("Los datos ya están actualizados para hoy.")
+        else:
+            nuevo_registro = pd.DataFrame({"category": [fecha_actual], "valor": [nuevo_valor]})
+            df = pd.concat([df, nuevo_registro], ignore_index=True)
+            df.to_csv("Bluex12.csv", index=False, encoding="utf-8")
+            st.success("Datos del dólar blue actualizados correctamente.")
+    else:
+        st.warning("No se pudo obtener el precio del dólar blue.")
+
 def cargar_datos():
-    """Carga y procesa el archivo CSV."""
+    """Carga y procesa el archivo Bluex12.csv."""
     try:
         df = pd.read_csv("Bluex12.csv", encoding="utf-8")
         df['category'] = pd.to_datetime(df['category'], errors='coerce')
         df.set_index('category', inplace=True)
         df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
-        df = df.dropna()  # Eliminar filas con valores NaN
+        df = df.dropna()
         return df
     except Exception as e:
         st.error(f"Error al cargar los datos: {e}")
         return None
 
-def encontrar_mejores_hiperparametros(serie):
-    """Encuentra los mejores hiperparámetros para ARIMA."""
-    p = d = q = range(0, 3)
-    pdq = list(itertools.product(p, d, q))
-    mejor_aic = float("inf")
-    mejor_pdq = (1, 1, 1)
-    for param in pdq:
-        try:
-            modelo = ARIMA(serie, order=param)
-            modelo_fit = modelo.fit()
-            if modelo_fit.aic < mejor_aic:
-                mejor_aic = modelo_fit.aic
-                mejor_pdq = param
-        except:
-            continue
-    return mejor_pdq
-
 def predecir_dolar_blue(df, dias_prediccion):
     """Predice el valor del dólar blue usando ARIMA."""
     df = df.sort_index()
     serie = df['valor']
-    mejores_parametros = encontrar_mejores_hiperparametros(serie)
-    modelo = ARIMA(serie, order=mejores_parametros)
+    modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
     fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion)
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
-    df_predicciones['Variación %'] = (df_predicciones['Predicción valor'].pct_change()) * 100
     return df_predicciones
 
 def mostrar_prediccion():
@@ -116,20 +126,11 @@ def mostrar_prediccion():
         dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 10, 15, 30])
         df_predicciones = predecir_dolar_blue(df, dias_prediccion)
         st.subheader(f"Predicción para los próximos {dias_prediccion} días")
-        
-        # Mostrar tabla con variación en color
-        def resaltar_variacion(val):
-            color = 'green' if val > 0 else 'red' if val < 0 else 'black'
-            return f'color: {color}'
-        df_predicciones_styled = df_predicciones.style.applymap(resaltar_variacion, subset=['Variación %'])
-        st.dataframe(df_predicciones_styled)
-        
-        # Graficar los datos históricos y las predicciones
+        st.dataframe(df_predicciones)
         fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 
 # =========================
