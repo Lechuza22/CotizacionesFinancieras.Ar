@@ -61,10 +61,16 @@ def obtener_datos_scraping():
         if tabla:
             df = pd.read_html(str(tabla))[0]
             df.columns = ["Fecha", "Compra", "Venta"]
-            df["Fecha"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y")
+            df["Fecha"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y", errors='coerce')
             df.set_index("Fecha", inplace=True)
             df["Venta"] = pd.to_numeric(df["Venta"].astype(str).str.replace("$", "").str.replace(",", ""), errors="coerce")
             return df
+        else:
+            st.error("⚠️ No se encontró la tabla en la página. Puede que la estructura haya cambiado.")
+            st.text("Vista previa del HTML recibido:")
+            st.code(soup.prettify()[:1000])  # Muestra los primeros 1000 caracteres del HTML para inspección
+    else:
+        st.error(f"⚠️ Error al acceder a la página. Código de estado: {response.status_code}")
     
     return None
 
@@ -100,7 +106,6 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 
 
