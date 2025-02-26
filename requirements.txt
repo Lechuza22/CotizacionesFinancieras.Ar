@@ -2,4 +2,5 @@ http.client
 json
 streamlit
 pandas
-plotly
+plotly==5.15.0
+
