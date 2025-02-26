@@ -80,6 +80,27 @@ def obtener_noticias():
 
     return noticias[:10]  # Limitar a las 10 primeras noticias
 
+def mostrar_noticias():
+    st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
+
+    noticias = obtener_noticias()
+
+    if noticias:
+        for noticia in noticias:
+            imagen_html = f"<img src='{noticia['imagen']}' width='200'>" if noticia["imagen"] else ""
+            st.markdown(
+                f"""
+                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                    {imagen_html}
+                    <h3><a href="{noticia['enlace']}" target="_blank" style="text-decoration:none; color:#1a73e8;">{noticia['titulo']}</a></h3>
+                    <p><strong>Fuente:</strong> {noticia['fuente']}</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.warning("⚠️ No se encontraron noticias recientes.")
+
 # =========================
 # 📌 MENÚ PRINCIPAL
 # =========================
@@ -87,73 +108,5 @@ if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
     menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias"])
 
-    if menu_seleccionado == "Precios":
-        st.title("💵 Precio del dólar Hoy")
-
-        tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list({
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.keys()))
-
-        datos = obtener_precio_dolar(tipo_dolar)
-
-        if "compra" in datos and "venta" in datos:
-            st.success(f"💰 **Compra:** ${datos['compra']}")
-            st.error(f"📈 **Venta:** ${datos['venta']}")
-
-    elif menu_seleccionado == "Variación de Cotizaciones":
-        st.title("📊 Variación de Cotizaciones respecto al Oficial")
-
-        precios = {nombre: obtener_precio_dolar(tipo)["venta"] for nombre, tipo in {
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.items()}
-
-        if "Oficial" in precios:
-            df_variaciones = pd.DataFrame({
-                "Tipo de Dólar": list(precios.keys()),
-                "Variación %": [(precio / precios["Oficial"] - 1) * 100 for precio in precios.values()],
-                "Precio": list(precios.values())
-            })
-
-            st.plotly_chart(px.scatter(df_variaciones, x="Precio", y="Tipo de Dólar", size="Precio", color="Variación %"))
-
-    elif menu_seleccionado == "Convertir":
-        st.title("💱 Convertidor de Moneda")
-
-        tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list({
-            "Mayorista": "mayorista",
-            "Oficial": "oficial",
-            "MEP": "bolsa",
-            "CCL": "contadoconliqui",
-            "Cripto": "cripto",
-            "Blue": "blue",
-            "Tarjeta": "tarjeta"
-        }.keys()))
-
-        datos = obtener_precio_dolar(tipo_dolar)
-
-        if "compra" in datos and "venta" in datos:
-            monto = st.number_input("Ingrese el monto a convertir:", min_value=0.0, format="%.2f")
-            conversion = st.radio("Seleccione el tipo de conversión:", ["Pesos a Dólares", "Dólares a Pesos"])
-
-            if conversion == "Pesos a Dólares":
-                st.success(f"💵 {monto} ARS equivale a **{monto / datos['venta']:.2f} USD**")
-            else:
-                st.success(f"💵 {monto} USD equivale a **{monto * datos['compra']:.2f} ARS**")
-
-    elif menu_seleccionado == "Novedades y Noticias":
-        st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
-
-        for noticia in obtener_noticias():
-            st.markdown(f"🔹 [**{noticia['titulo']}**]({noticia['enlace']}) _(Fuente: {noticia['fuente']})_")
+    if menu_seleccionado == "Novedades y Noticias":
+        mostrar_noticias()
