@@ -64,14 +64,47 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 # =========================
 def mostrar_precios():
     st.title("💵 Precio del dólar Hoy")
+
+    # Selector para elegir el tipo de dólar a mostrar
     tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+
+    # Obtener el precio del tipo de dólar seleccionado
     datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
-    
+
     if "compra" in datos and "venta" in datos:
-        compra, venta = datos["compra"], datos["venta"]
-        st.success(f"💰 Compra: ${compra} | 📈 Venta: ${venta}")
+        compra = datos["compra"]
+        venta = datos["venta"]
+
+        # Mostrar cuadro con compra y venta en colores
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #222831;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+                font-size: 20px;
+                font-weight: bold;
+                color: white;
+            ">
+                <span style="color: #33FF57;">💰 Compra: ${compra}</span><br>
+                <span style="color: #FF5733;">📈 Venta: ${venta}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Mostrar fecha de actualización y fuente
+        st.markdown(
+            f"""
+            📅 **Última actualización:** {fecha_actualizacion}  
+            📌 **Fuente:** [DolarAPI](https://dolarapi.com)
+            """,
+            unsafe_allow_html=True
+        )
     else:
         st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
+
 
 # =========================
 # 💱 CONVERTIR MONEDAS
