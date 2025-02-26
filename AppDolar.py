@@ -93,4 +93,33 @@ elif menu_seleccionado == "Variación de Cotizaciones":
             precios[nombre] = datos["venta"]
     
     if "Oficial" in precios:
-        oficial = precios["Of
+        oficial = precios["Oficial"]
+        variaciones = {nombre: ((precio / oficial) - 1) * 100 for nombre, precio in precios.items() if precio}
+
+        df_variaciones = pd.DataFrame({
+            "Tipo de Dólar": list(variaciones.keys()),
+            "Variación %": list(variaciones.values()),
+            "Precio": [precios[nombre] for nombre in variaciones.keys()]
+        })
+
+        # Crear el gráfico
+        fig = px.scatter(
+            df_variaciones,
+            x="Precio",
+            y="Tipo de Dólar",
+            size="Precio",
+            color="Variación %",
+            text="Precio",
+            hover_data=["Variación %"],
+            title="Variación de Cotizaciones respecto al Dólar Oficial",
+            size_max=15,
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+
+        fig.update_traces(textposition="middle right")
+        fig.update_layout(xaxis_title="Precio en $", yaxis_title="Tipo de Dólar")
+
+        st.plotly_chart(fig)
+    else:
+        st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial, por lo que no se puede calcular la variación.")
+
