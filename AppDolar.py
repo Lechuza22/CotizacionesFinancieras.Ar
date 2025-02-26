@@ -50,7 +50,7 @@ def actualizar_datos_blue():
 
 def obtener_datos_scraping():
     """Obtiene los datos históricos del dólar blue desde Dólar Hoy."""
-    url = "https://dolarhoy.com/historico-dolar-blue#"
+    url = "https://dolarhoy.com/historico-dolar-blue/dias_15"
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
     
@@ -100,6 +100,7 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 
 
