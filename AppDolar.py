@@ -70,11 +70,22 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 @st.cache_data
 def cargar_datos():
-    """Carga el archivo CSV con los datos del dólar blue."""
+    """Carga el archivo CSV con los datos del dólar blue y ajusta el índice temporal."""
     try:
-        df = pd.read_csv("Bluex12.csv")
-        df['Fecha'] = pd.to_datetime(df['Fecha'])
-        df.set_index('Fecha', inplace=True)
+        df = pd.read_csv("/mnt/data/Bluex12.csv", encoding="utf-8")
+        st.write("### Vista previa de los datos:")
+        st.write(df.head())
+        
+        # Verificar columnas disponibles
+        st.write("### Columnas en el archivo CSV:")
+        st.write(df.columns)
+        
+        if 'category' not in df.columns:
+            raise ValueError("La columna 'category' no se encuentra en el archivo CSV.")
+        
+        # Convertir la columna 'category' en un índice numérico secuencial
+        df['category'] = pd.to_numeric(df['category'], errors='coerce')
+        df.set_index('category', inplace=True)
         return df
     except Exception as e:
         st.error(f"Error al cargar los datos: {e}")
@@ -106,8 +117,8 @@ def predecir_dolar_blue(df, dias_prediccion):
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    fechas_prediccion = pd.date_range(start=serie.index[-1] + timedelta(days=1), periods=dias_prediccion)
-    df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Venta': predicciones})
+    categorias_prediccion = range(df.index[-1] + 1, df.index[-1] + 1 + dias_prediccion)
+    df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción Venta': predicciones})
     df_predicciones['Variación %'] = (df_predicciones['Predicción Venta'].pct_change()) * 100
     return df_predicciones
 
@@ -127,7 +138,7 @@ def mostrar_prediccion():
         st.dataframe(df_predicciones_styled)
         
         # Graficar los datos históricos y las predicciones
-        fig = px.line(df_predicciones, x='Fecha', y='Predicción Venta', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        fig = px.line(df_predicciones, x='category', y='Predicción Venta', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
