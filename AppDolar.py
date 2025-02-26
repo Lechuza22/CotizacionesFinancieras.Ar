@@ -69,17 +69,34 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 def obtener_datos_dolar_blue():
     url = "https://www.ambito.com/contenidos/dolar-informal-historico.html"
-    response = requests.get(url)
+    response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+    
+    if response.status_code != 200:
+        st.error("⚠️ No se pudo obtener los datos del dólar blue. Verifique la conexión o si la página ha cambiado.")
+        return None
+    
     soup = BeautifulSoup(response.text, 'html.parser')
     tabla = soup.find('table')
-    headers = [header.text for header in tabla.find_all('th')]
+    
+    if tabla is None:
+        st.error("⚠️ No se encontró la tabla con datos históricos en la página. Puede haber cambiado el diseño del sitio.")
+        return None
+    
+    headers = [header.text.strip() for header in tabla.find_all('th')]
     rows = []
     for row in tabla.find_all('tr')[1:]:
         cols = row.find_all('td')
-        rows.append([col.text for col in cols])
+        rows.append([col.text.strip() for col in cols])
+    
+    if not rows:
+        st.error("⚠️ No se encontraron datos en la tabla de la página web.")
+        return None
+    
     df = pd.DataFrame(rows, columns=headers)
-    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y')
-    df['Venta'] = df['Venta'].str.replace(',', '').astype(float)
+    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y', errors='coerce')
+    df['Venta'] = pd.to_numeric(df['Venta'].str.replace(',', ''), errors='coerce')
+    
+    df.dropna(inplace=True)
     return df
 
 def predecir_dolar_blue(df, dias_prediccion):
@@ -111,7 +128,6 @@ def mostrar_prediccion():
         st.pyplot(plt)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 # =========================
 # 💵 MOSTRAR PRECIOS
