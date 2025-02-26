@@ -72,7 +72,7 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 def cargar_datos():
     """Carga el archivo CSV con los datos del dólar blue y ajusta el índice temporal."""
     try:
-        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
+        df = pd.read_csv("/mnt/data/Bluex12.csv", encoding="utf-8")
         st.write("### Vista previa de los datos:")
         st.write(df.head())
         
@@ -86,7 +86,7 @@ def cargar_datos():
             raise ValueError("La columna 'valor' no se encuentra en el archivo CSV. Verifique los nombres de las columnas.")
         
         # Convertir las columnas necesarias
-        df['category'] = pd.to_numeric(df['category'], errors='coerce')
+        df['category'] = pd.to_numeric(df['category'], errors='coerce').astype('Int64')
         df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
         df.set_index('category', inplace=True)
         return df
@@ -120,9 +120,9 @@ def predecir_dolar_blue(df, dias_prediccion):
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    categorias_prediccion = range(df.index[-1] + 1, df.index[-1] + 1 + dias_prediccion)
+    categorias_prediccion = list(range(int(df.index[-1]) + 1, int(df.index[-1]) + 1 + dias_prediccion))
     df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción valor': predicciones})
-    df_predicciones['Variación %'] = (df_predicciones['Predicción Venta'].pct_change()) * 100
+    df_predicciones['Variación %'] = (df_predicciones['Predicción valor'].pct_change()) * 100
     return df_predicciones
 
 def mostrar_prediccion():
