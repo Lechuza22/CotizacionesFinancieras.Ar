@@ -108,14 +108,14 @@ def cargar_datos():
         st.error(f"Error al cargar los datos: {e}")
         return None
 
-def predecir_dolar_blue(df, dias_prediccion):
+def predecir_dolar_blue(df, horas_prediccion):
     """Predice el valor del dólar blue usando ARIMA."""
     df = df.sort_index()
     serie = df['valor']
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
-    predicciones = modelo_fit.forecast(steps=dias_prediccion)
-    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion)
+    predicciones = modelo_fit.forecast(steps=horas_prediccion)
+    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(hours=1), periods=horas_prediccion, freq='H')
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
     return df_predicciones
 
@@ -123,14 +123,15 @@ def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
     df = cargar_datos()
     if df is not None and not df.empty:
-        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 10, 15, 30])
-        df_predicciones = predecir_dolar_blue(df, dias_prediccion)
-        st.subheader(f"Predicción para los próximos {dias_prediccion} días")
+        horas_prediccion = st.selectbox("Seleccione el horizonte de predicción (horas):", [6, 12, 24, 36, 42, 72])
+        df_predicciones = predecir_dolar_blue(df, horas_prediccion)
+        st.subheader(f"Predicción para las próximas {horas_prediccion} horas")
         st.dataframe(df_predicciones)
-        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {horas_prediccion} horas")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 
 # =========================
