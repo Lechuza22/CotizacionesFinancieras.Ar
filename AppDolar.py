@@ -87,7 +87,7 @@ def cargar_datos():
         
         # Convertir las columnas necesarias
         df['category'] = pd.to_numeric(df['category'], errors='coerce')
-        df['valor'] = pd.to_numeric(df['Venta'], errors='coerce')
+        df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
         df.set_index('category', inplace=True)
         return df
     except Exception as e:
@@ -115,13 +115,13 @@ def encontrar_mejores_hiperparametros(serie):
 def predecir_dolar_blue(df, dias_prediccion):
     """Realiza la predicción del dólar blue usando el mejor modelo ARIMA."""
     df = df.sort_index()
-    serie = df['Venta']
+    serie = df['valor']
     mejores_parametros = encontrar_mejores_hiperparametros(serie)
     modelo = ARIMA(serie, order=mejores_parametros)
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
     categorias_prediccion = range(df.index[-1] + 1, df.index[-1] + 1 + dias_prediccion)
-    df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción Venta': predicciones})
+    df_predicciones = pd.DataFrame({'category': categorias_prediccion, 'Predicción valor': predicciones})
     df_predicciones['Variación %'] = (df_predicciones['Predicción Venta'].pct_change()) * 100
     return df_predicciones
 
@@ -145,6 +145,7 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 # =========================
 # 💵 MOSTRAR PRECIOS
