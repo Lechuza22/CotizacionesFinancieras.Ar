@@ -49,26 +49,28 @@ def actualizar_datos_blue():
         st.warning("No se pudo obtener el precio del dólar blue.")
 
 def obtener_datos_scraping():
-    """Obtiene los datos históricos del dólar blue desde Dólar Hoy."""
+    """Obtiene los datos históricos del dólar blue desde Dólar Hoy en formato JSON."""
     url = "https://dolarhoy.com/historico-dolar-blue/dias_15"
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
     
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, "html.parser")
-        tabla = soup.find("table")
+        script_tag = soup.find("script", string=re.compile("\{"))  # Buscar el script con datos JSON
         
-        if tabla:
-            df = pd.read_html(str(tabla))[0]
-            df.columns = ["Fecha", "Compra", "Venta"]
-            df["Fecha"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y", errors='coerce')
-            df.set_index("Fecha", inplace=True)
-            df["Venta"] = pd.to_numeric(df["Venta"].astype(str).str.replace("$", "").str.replace(",", ""), errors="coerce")
-            return df
-        else:
-            st.error("⚠️ No se encontró la tabla en la página. Puede que la estructura haya cambiado.")
-            st.text("Vista previa del HTML recibido:")
-            st.code(soup.prettify()[:1000])  # Muestra los primeros 1000 caracteres del HTML para inspección
+        if script_tag:
+            json_text = re.search(r'\[.*?\]', script_tag.string)
+            if json_text:
+                data = json.loads(json_text.group())
+                fechas = [datetime.strptime(item["x"], "%a %b %d %Y %H:%M:%S GMT%z (%Z)") for item in data]
+                valores = [item["y"] for item in data]
+                df = pd.DataFrame({"Fecha": fechas, "Venta": valores})
+                df.set_index("Fecha", inplace=True)
+                return df
+        
+        st.error("⚠️ No se encontró el JSON con los datos históricos en la página. Puede que la estructura haya cambiado.")
+        st.text("Vista previa del HTML recibido:")
+        st.code(soup.prettify()[:1000])  # Muestra los primeros 1000 caracteres del HTML para inspección
     else:
         st.error(f"⚠️ Error al acceder a la página. Código de estado: {response.status_code}")
     
