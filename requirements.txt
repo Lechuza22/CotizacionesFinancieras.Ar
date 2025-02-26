@@ -1,7 +1,11 @@
 streamlit
+httpx
 pandas
+numpy
 plotly
-beautifulsoup4
-requests
 feedparser
-lxml
+scikit-learn
+requests
+beautifulsoup4
+statsmodels
+matplotlib
