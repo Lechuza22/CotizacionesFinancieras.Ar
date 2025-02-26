@@ -34,7 +34,7 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 # Sidebar con opciones
 st.sidebar.title("📌 Menú")
-menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones"])
+menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir"])
 
 # =========================
 # 🚀 OPCIÓN: MOSTRAR PRECIOS (CON SELECCIÓN DE TIPO, FECHA Y COLORES)
@@ -138,3 +138,44 @@ elif menu_seleccionado == "Variación de Cotizaciones":
     else:
         st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial, por lo que no se puede calcular la variación.")
 
+# =========================
+# 🔄 OPCIÓN: CONVERTIR PESOS ↔ DÓLARES
+# =========================
+elif menu_seleccionado == "Convertir":
+    st.title("💱 Convertidor de Moneda")
+
+    # Selección del tipo de dólar para la conversión
+    tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
+
+    # Obtener el precio del tipo de dólar seleccionado
+    datos = obtener_precio_dolar(tipos_dolar[tipo_dolar])
+
+    if "compra" in datos and "venta" in datos:
+        compra = datos["compra"]
+        venta = datos["venta"]
+
+        # Entrada del usuario
+        monto = st.number_input("Ingrese el monto a convertir:", min_value=0.0, format="%.2f")
+
+        # Seleccionar dirección de conversión
+        conversion = st.radio("Seleccione el tipo de conversión:", ["Pesos a Dólares", "Dólares a Pesos"])
+
+        if st.button("Convertir"):
+            if conversion == "Pesos a Dólares":
+                resultado = monto / venta  # Se usa la venta porque compras dólares a ese precio
+                st.success(f"💵 {monto} ARS equivale a **{resultado:.2f} USD**")
+            else:
+                resultado = monto * compra  # Se usa la compra porque vendes dólares a ese precio
+                st.success(f"💵 {monto} USD equivale a **{resultado:.2f} ARS**")
+
+        # Mostrar fecha de actualización y fuente
+        st.markdown(
+            f"""
+            📅 **Última actualización:** {fecha_actualizacion}  
+            📌 **Fuente:** [DolarAPI](https://dolarapi.com)
+            """,
+            unsafe_allow_html=True
+        )
+
+    else:
+        st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
