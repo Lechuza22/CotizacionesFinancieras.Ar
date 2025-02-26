@@ -29,23 +29,18 @@ def obtener_precio_dolar(tipo):
 
 @st.cache_data
 def obtener_noticias():
-    """Busca noticias sobre el dólar en Argentina mediante Google Search."""
+    """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
     try:
-        query = "dólar Argentina"
+        feed_url = "https://news.google.com/rss/search?q=dólar+Argentina&hl=es-419&gl=AR&ceid=AR:es"
+        feed = feedparser.parse(feed_url)
         noticias = []
 
-        for url in search(query, num=10, stop=10, pause=2):
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            titulo = soup.find('title').text if soup.find('title') else "Título no disponible"
-            fuente = url.split("/")[2]
-            fecha = "Fecha no disponible"  # Algunas páginas pueden no mostrar fecha en la metadata
-
+        for entry in feed.entries[:10]:
             noticias.append({
-                'titulo': titulo,
-                'enlace': url,
-                'fecha': fecha,
-                'fuente': fuente
+                'titulo': entry.title,
+                'enlace': entry.link,
+                'fecha': entry.published if 'published' in entry else "Fecha no disponible",
+                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida"
             })
 
         return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
