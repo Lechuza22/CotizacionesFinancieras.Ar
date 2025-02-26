@@ -69,10 +69,14 @@ fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
 def obtener_datos_dolar_blue():
     url = "https://dolarhoy.com/historico-dolar-blue"
-    response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+    }
+    response = requests.get(url, headers=headers)
     
     if response.status_code != 200:
-        st.error("⚠️ No se pudo obtener los datos del dólar blue. Verifique la conexión o si la página ha cambiado.")
+        st.error(f"⚠️ No se pudo obtener los datos del dólar blue. Código de estado: {response.status_code}")
         return None
     
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -94,8 +98,8 @@ def obtener_datos_dolar_blue():
     
     df = pd.DataFrame(rows, columns=headers)
     df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y', errors='coerce')
-    df['Compra'] = pd.to_numeric(df['Compra'].str.replace(',', ''), errors='coerce')
-    df['Venta'] = pd.to_numeric(df['Venta'].str.replace(',', ''), errors='coerce')
+    df['Compra'] = pd.to_numeric(df['Compra'].str.replace(',', '').str.replace('ARS', '').str.strip(), errors='coerce')
+    df['Venta'] = pd.to_numeric(df['Venta'].str.replace(',', '').str.replace('ARS', '').str.strip(), errors='coerce')
     
     df.dropna(inplace=True)
     return df
