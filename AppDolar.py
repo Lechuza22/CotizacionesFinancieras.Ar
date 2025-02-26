@@ -19,10 +19,13 @@ def obtener_precio_dolar(tipo):
     return json.loads(data.decode("utf-8"))
 
 # Botones para seleccionar el tipo de dólar
-tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", ["Blue"])
+tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", ["Blue", "Oficial"])
+
+# Mapeo de tipos de dólar a los valores de la API
+tipo_dolar_api = {"Blue": "blue", "Oficial": "oficial"}
 
 if st.button("Consultar precio"):
-    datos = obtener_precio_dolar("blue")
+    datos = obtener_precio_dolar(tipo_dolar_api[tipo_dolar])
 
     if "compra" in datos and "venta" in datos:
         st.success(f"💰 **Compra:** ${datos['compra']}")
