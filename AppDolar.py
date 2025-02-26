@@ -35,16 +35,23 @@ def obtener_noticias():
         noticias = []
 
         for entry in feed.entries[:10]:
+            response = requests.get(entry.link)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            imagen = soup.find('meta', property='og:image')
+            imagen_url = imagen['content'] if imagen else "https://via.placeholder.com/150"
+            
             noticias.append({
                 'titulo': entry.title,
                 'enlace': entry.link,
                 'fecha': entry.published if 'published' in entry else "Fecha no disponible",
-                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida"
+                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida",
+                'imagen': imagen_url
             })
 
-        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
+        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": "", "imagen": "https://via.placeholder.com/150"}]
     except Exception as e:
-        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
+        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": "", "imagen": "https://via.placeholder.com/150"}]
+
 
 # Diccionario con los tipos de dólar
 tipos_dolar = {
@@ -178,6 +185,7 @@ def mostrar_noticias():
     noticias = obtener_noticias()
     
     for noticia in noticias:
+        st.image(noticia['imagen'], use_column_width=True)
         st.write(f"**{noticia['titulo']}**")
         st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
         st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
