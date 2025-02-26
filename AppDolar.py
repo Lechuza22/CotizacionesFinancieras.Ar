@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 
 # Configurar la página
-st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵")
+st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
 # Función para obtener los precios de los diferentes tipos de dólar
 def obtener_precio_dolar(tipo):
@@ -33,62 +33,64 @@ st.sidebar.title("📌 Menú")
 menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones"])
 
 # =========================
-# 🚀 OPCIÓN: MOSTRAR PRECIOS
+# 🚀 OPCIÓN: MOSTRAR PRECIOS (CON TARJETAS COLORIDAS)
 # =========================
 if menu_seleccionado == "Precios":
     st.title("💵 Precios del dólar Hoy")
 
-    precios = {}
+    col1, col2, col3 = st.columns(3)
     
-    for nombre, tipo in tipos_dolar.items():
+    precios = {}
+
+    colores = {
+        "Mayorista": "#FF5733",
+        "Oficial": "#33FF57",
+        "MEP": "#3385FF",
+        "CCL": "#FF33E3",
+        "Cripto": "#FFC733",
+        "Blue": "#33FFF3",
+        "Tarjeta": "#FF9033"
+    }
+
+    for i, (nombre, tipo) in enumerate(tipos_dolar.items()):
         datos = obtener_precio_dolar(tipo)
         if "venta" in datos:
             precios[nombre] = datos["venta"]
-            st.write(f"**{nombre}:** ${datos['venta']}")
+            precio_str = f"💰 **${datos['venta']}**"
         else:
             precios[nombre] = None
-            st.write(f"**{nombre}:** ❌ No disponible")
+            precio_str = "❌ No disponible"
+
+        with (col1 if i % 3 == 0 else col2 if i % 3 == 1 else col3):
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: {colores[nombre]};
+                    padding: 15px;
+                    border-radius: 10px;
+                    text-align: center;
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: white;
+                ">
+                    {nombre}<br>{precio_str}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 # =========================
-# 📊 OPCIÓN: VARIACIÓN RESPECTO AL OFICIAL
+# 📊 OPCIÓN: VARIACIÓN RESPECTO AL OFICIAL (GRÁFICO SIMILAR AL DE LA IMAGEN)
 # =========================
 elif menu_seleccionado == "Variación de Cotizaciones":
     st.title("📊 Variación de Cotizaciones respecto al Oficial")
 
     precios = {}
-    
+
     for nombre, tipo in tipos_dolar.items():
         datos = obtener_precio_dolar(tipo)
         if "venta" in datos:
             precios[nombre] = datos["venta"]
     
     if "Oficial" in precios:
-        oficial = precios["Oficial"]
-        variaciones = {nombre: ((precio / oficial) - 1) * 100 for nombre, precio in precios.items() if precio}
-
-        df_variaciones = pd.DataFrame({
-            "Tipo de Dólar": list(variaciones.keys()),
-            "Variación %": list(variaciones.values()),
-            "Precio": [precios[nombre] for nombre in variaciones.keys()]
-        })
-
-        # Crear el gráfico
-        fig = px.scatter(
-            df_variaciones,
-            x="Precio",
-            y="Tipo de Dólar",
-            size="Precio",
-            color="Variación %",
-            text="Precio",
-            hover_data=["Variación %"],
-            title="Variación de Cotizaciones respecto al Dólar Oficial",
-            size_max=15,
-        )
-
-        fig.update_traces(textposition="middle right")
-        fig.update_layout(xaxis_title="Precio en $", yaxis_title="Tipo de Dólar")
-
-        st.plotly_chart(fig)
-    else:
-        st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial, por lo que no se puede calcular la variación.")
-
+        oficial = precios["Of
