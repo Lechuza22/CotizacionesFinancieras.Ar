@@ -38,12 +38,19 @@ def obtener_noticias():
         for item in soup.find_all('article', limit=10):
             titulo = item.find('h2')
             enlace = item.find('a')
+            fecha = item.find('time')
+            fuente = "La Nación"
             if titulo and enlace:
-                noticias.append({'titulo': titulo.get_text(strip=True), 'enlace': enlace['href']})
+                noticias.append({
+                    'titulo': titulo.get_text(strip=True),
+                    'enlace': enlace['href'],
+                    'fecha': fecha.get_text(strip=True) if fecha else "Fecha no disponible",
+                    'fuente': fuente
+                })
 
-        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#"}]
+        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
     except Exception as e:
-        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#"}]
+        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
 
 # Diccionario con los tipos de dólar
 tipos_dolar = {
@@ -178,7 +185,9 @@ def mostrar_noticias():
     
     for noticia in noticias:
         st.write(f"**{noticia['titulo']}**")
+        st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
         st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
+        st.markdown("---")
 
 # =========================
 # 📌 MENÚ PRINCIPAL
