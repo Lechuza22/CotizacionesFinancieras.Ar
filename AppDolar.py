@@ -87,7 +87,10 @@ def cargar_datos():
         
         # Convertir las columnas necesarias
         df['category'] = pd.to_numeric(df['category'], errors='coerce')
-        df = df.dropna(subset=['category'])
+        df = df.dropna(subset=['valor'], how='any')
+        if df.empty:
+            st.error("El DataFrame está vacío después de eliminar valores NaN en 'valor'.")
+            return None
         df['category'] = df['category'].astype(int)
         df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
         df.set_index('category', inplace=True)
@@ -99,7 +102,7 @@ def cargar_datos():
 @st.cache_data
 def encontrar_mejores_hiperparametros(serie):
     """Encuentra los mejores hiperparámetros para el modelo ARIMA usando una búsqueda de cuadrícula."""
-    p = d = q = range(1,1,1)
+    p = d = q = range(0, 3)
     pdq = list(itertools.product(p, d, q))
     mejor_aic = float("inf")
     mejor_pdq = None
@@ -126,7 +129,13 @@ def predecir_dolar_blue(df, dias_prediccion):
         st.error("El DataFrame está vacío o no se cargó correctamente.")
         return None
         raise ValueError("El DataFrame está vacío después de la carga de datos.")
-    ultimo_indice = int(df.index[-1]) if not df.index.empty else 0
+    if df.index.empty or len(df) == 0:
+        st.error("El DataFrame está vacío después de la carga de datos.")
+        return None
+    
+        ultimo_indice = 0
+    else:
+        ultimo_indice = int(df.index[-1]) if not df.index.empty else 1
     if pd.isna(ultimo_indice):
         raise ValueError("El índice 'category' contiene valores NaN o no es válido.")
     categorias_prediccion = list(range(int(ultimo_indice) + 1, int(ultimo_indice) + 1 + dias_prediccion))
