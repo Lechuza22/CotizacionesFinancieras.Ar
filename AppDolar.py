@@ -109,13 +109,15 @@ def cargar_datos():
         return None
 
 def predecir_dolar_blue(df, horas_prediccion):
-    """Predice el valor del dólar blue usando ARIMA."""
+    """Predice el valor del dólar blue usando ARIMA, tomando datos de la última semana."""
     df = df.sort_index()
-    serie = df['valor']
+    ultima_fecha = df.index[-1]
+    df_reciente = df[df.index >= ultima_fecha - timedelta(days=7)]
+    serie = df_reciente['valor']
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
     predicciones = modelo_fit.forecast(steps=horas_prediccion)
-    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(hours=1), periods=horas_prediccion, freq='H')
+    fechas_prediccion = pd.date_range(start=ultima_fecha + timedelta(hours=1), periods=horas_prediccion, freq='H')
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
     return df_predicciones
 
@@ -131,7 +133,6 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 
 
 # =========================
