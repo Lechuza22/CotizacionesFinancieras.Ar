@@ -1,15 +1,13 @@
 import streamlit as st
-import http.client
-import json
+import requests
 
 def obtener_dolar(tipo):
+    url = f"https://dolarapi.com/v1/dolares/{tipo}"
     try:
-        conn = http.client.HTTPSConnection("dolarapi.com")
-        conn.request("GET", f"/v1/dolares/{tipo}")
-        res = conn.getresponse()
-        data = res.read().decode("utf-8")
-        return json.loads(data)
-    except Exception as e:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException:
         return None
 
 # Configurar el icono y el título de la pestaña
@@ -61,3 +59,4 @@ if st.button("Dólar Cripto 🪙"):
     mostrar_dolar("cripto", "Cripto")
 
 st.caption("Fuente: DolarAPI")
+
