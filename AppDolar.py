@@ -16,29 +16,7 @@ import itertools
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
-# =========================
-# 🚀 FUNCIONES MEJORADAS
-# =========================
 @st.cache_data
-
-def obtener_noticias():
-    """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
-    try:
-        feed_url = "https://news.google.com/rss/search?q=dólar+Argentina&hl=es-419&gl=AR&ceid=AR:es"
-        feed = feedparser.parse(feed_url)
-        noticias = []
-
-        for entry in feed.entries[:10]:
-            noticias.append({
-                'titulo': entry.title,
-                'enlace': entry.link,
-                'fecha': entry.published if 'published' in entry else "Fecha no disponible",
-                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida"
-            })
-
-        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
-    except Exception as e:
-        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
 ## Predicciones
 
 def actualizar_datos_blue():
@@ -109,10 +87,6 @@ def mostrar_prediccion():
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
 
-
-# =========================
-# 💵 MOSTRAR PRECIOS
-# =========================
 def obtener_precio_dolar(tipo):
     """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
     try:
@@ -223,9 +197,7 @@ def mostrar_variacion():
     else:
         st.warning("⚠️ No se pudo obtener el precio del Dólar Oficial.")
 
-# =========================
-# 💱 CONVERTIR MONEDAS
-# =========================
+
 def convertir_monedas():
     st.title("💱 Convertidor de Moneda")
     tipo_dolar = st.selectbox("Seleccione el tipo de dólar:", list(tipos_dolar.keys()))
@@ -243,10 +215,26 @@ def convertir_monedas():
             else:
                 resultado = monto * compra
                 st.success(f"💵 {monto} USD equivale a **{resultado:.2f} ARS**")
+                
+def obtener_noticias():
+    """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
+    try:
+        feed_url = "https://news.google.com/rss/search?q=dólar+Argentina&hl=es-419&gl=AR&ceid=AR:es"
+        feed = feedparser.parse(feed_url)
+        noticias = []
 
-# =========================
-# 📰 MOSTRAR NOTICIAS
-# =========================
+        for entry in feed.entries[:10]:
+            noticias.append({
+                'titulo': entry.title,
+                'enlace': entry.link,
+                'fecha': entry.published if 'published' in entry else "Fecha no disponible",
+                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida"
+            })
+
+        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
+    except Exception as e:
+        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
+
 def mostrar_noticias():
     st.title("📰 Novedades y Noticias sobre el Dólar en Argentina")
     if st.button("🔄 Actualizar Noticias"):
