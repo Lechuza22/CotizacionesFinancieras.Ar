@@ -80,8 +80,7 @@ def mostrar_precios():
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown(f"📅 **Última actualización:** {fecha_actualizacion}  
-                     📌 **Fuente:** [DolarAPI](https://dolarapi.com)")
+        st.markdown(f"📅 **Última actualización:** {fecha_actualizacion}<br>📌 **Fuente:** [DolarAPI](https://dolarapi.com)", unsafe_allow_html=True)
     else:
         st.warning(f"⚠️ No se pudo obtener el precio del dólar {tipo_dolar}.")
 
