@@ -112,7 +112,7 @@ def encontrar_mejores_hiperparametros(serie):
                 mejor_pdq = param
         except:
             continue
-    return mejor_pdq
+    return mejor_pdq if mejor_pdq else (1, 1, 1)
 
 def predecir_dolar_blue(df, dias_prediccion):
     """Realiza la predicción del dólar blue usando el mejor modelo ARIMA."""
@@ -150,6 +150,7 @@ def mostrar_prediccion():
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 
 
