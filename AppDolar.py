@@ -5,11 +5,14 @@ import json
 import plotly.express as px
 
 def obtener_dolar(tipo):
-    conn = http.client.HTTPSConnection("dolarapi.com")
-    conn.request("GET", f"/v1/dolares/{tipo}")
-    res = conn.getresponse()
-    data = res.read().decode("utf-8")
-    return json.loads(data)
+    try:
+        conn = http.client.HTTPSConnection("dolarapi.com")
+        conn.request("GET", f"/v1/dolares/{tipo}")
+        res = conn.getresponse()
+        data = res.read().decode("utf-8")
+        return json.loads(data)
+    except Exception as e:
+        return None
 
 # Configurar el icono y el título de la pestaña
 st.set_page_config(page_title="Dólar Argentina", page_icon="💲")
@@ -22,18 +25,19 @@ def mostrar_precio():
     opciones = ["Oficial", "Blue", "CCL", "Tarjeta", "Cripto", "Comparaciones"]
     seleccion = st.selectbox("Seleccione un tipo de dólar:", opciones)
     
+    tipo_api = {
+        "Oficial": "oficial",
+        "Blue": "blue",
+        "CCL": "contadoconliqui",
+        "Tarjeta": "tarjeta",
+        "Cripto": "cripto"
+    }
+    
     if seleccion != "Comparaciones":
-        tipo_api = {
-            "Oficial": "oficial",
-            "Blue": "blue",
-            "CCL": "contadoconliqui",
-            "Tarjeta": "tarjeta",
-            "Cripto": "cripto"
-        }
-        precio = obtener_dolar(tipo_api[seleccion])
-        if precio:
-            compra = precio.get("compra", "No disponible")
-            venta = precio.get("venta", "No disponible")
+        precio = obtener_dolar(tipo_api.get(seleccion, ""))
+        if precio and "compra" in precio and "venta" in precio:
+            compra = precio["compra"]
+            venta = precio["venta"]
             
             st.markdown(
                 f"""
@@ -60,8 +64,8 @@ def mostrar_precio():
         datos = []
         for nombre, tipo in tipos.items():
             precio = obtener_dolar(tipo)
-            if precio:
-                datos.append({"Tipo": nombre, "Compra": precio.get("compra", 0), "Venta": precio.get("venta", 0)})
+            if precio and "compra" in precio and "venta" in precio:
+                datos.append({"Tipo": nombre, "Compra": precio["compra"], "Venta": precio["venta"]})
         df = pd.DataFrame(datos)
         
         if not df.empty:
