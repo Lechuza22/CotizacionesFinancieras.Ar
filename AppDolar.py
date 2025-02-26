@@ -15,10 +15,8 @@ st.set_page_config(page_title="Dólar Argentina", page_icon="💲")
 
 st.title("Dólar en Argentina 🇦🇷")
 
-# Crear menú lateral
-menu = st.sidebar.selectbox("Menú", ["Precio", "Predicción"])
-
-if menu == "Precio":
+# Crear menú con botones
+def mostrar_precio():
     st.subheader("Precio del Dólar Blue Hoy 💰")
     precio_blue = obtener_precio_blue()
     if precio_blue:
@@ -45,8 +43,19 @@ if menu == "Precio":
     else:
         st.error("No se pudieron obtener datos del dólar blue.")
 
-elif menu == "Predicción":
+def mostrar_prediccion():
     st.subheader("Predicción del Dólar 📈")
     st.write("Aquí se mostrará la predicción del valor del dólar basada en análisis de datos.")
+
+# Botones de navegación
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("Precio 💰"):
+        mostrar_precio()
+
+with col2:
+    if st.button("Predicción 📈"):
+        mostrar_prediccion()
 
 st.caption("Fuente: DolarAPI")
