@@ -5,4 +5,4 @@ beautifulsoup4
 requests
 lxml
 googlesearch
-
+feedparser
