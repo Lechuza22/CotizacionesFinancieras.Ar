@@ -48,45 +48,49 @@ def actualizar_datos_blue():
     else:
         st.warning("No se pudo obtener el precio del dólar blue.")
 
-def cargar_datos():
-    """Carga y procesa el archivo Bluex12.csv."""
-    try:
-        df = pd.read_csv("Bluex12.csv", encoding="utf-8")
-        df['category'] = pd.to_datetime(df['category'], errors='coerce')
-        df.set_index('category', inplace=True)
-        df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
-        df = df.dropna()
-        return df
-    except Exception as e:
-        st.error(f"Error al cargar los datos: {e}")
-        return None
+def obtener_datos_scraping():
+    """Obtiene los datos históricos del dólar blue desde Dólar Hoy."""
+    url = "https://dolarhoy.com/historico-dolar-blue#"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        tabla = soup.find("table")
+        
+        if tabla:
+            df = pd.read_html(str(tabla))[0]
+            df.columns = ["Fecha", "Compra", "Venta"]
+            df["Fecha"] = pd.to_datetime(df["Fecha"], format="%d/%m/%Y")
+            df.set_index("Fecha", inplace=True)
+            df["Venta"] = pd.to_numeric(df["Venta"].str.replace("$", "").str.replace(",", ""), errors="coerce")
+            return df
+    
+    return None
 
-def predecir_dolar_blue(df, horas_prediccion):
-    """Predice el valor del dólar blue usando ARIMA, tomando datos de la última semana."""
+def predecir_dolar_blue(df, dias_prediccion):
+    """Predice el valor del dólar blue usando ARIMA."""
     df = df.sort_index()
-    ultima_fecha = df.index[-1]
-    df_reciente = df[df.index >= ultima_fecha - timedelta(days=7)]
-    serie = df_reciente['valor']
+    serie = df['Venta']
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
-    predicciones = modelo_fit.forecast(steps=horas_prediccion)
-    fechas_prediccion = pd.date_range(start=ultima_fecha + timedelta(hours=1), periods=horas_prediccion, freq='H')
+    predicciones = modelo_fit.forecast(steps=dias_prediccion)
+    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion, freq='D')
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción valor': predicciones})
     return df_predicciones
 
 def mostrar_prediccion():
     st.title("📈 Predicción del Dólar Blue")
-    df = cargar_datos()
+    df = obtener_datos_scraping()
     if df is not None and not df.empty:
-        horas_prediccion = st.selectbox("Seleccione el horizonte de predicción (horas):", [3, 6, 12, 24, 36, 42, 72])
-        df_predicciones = predecir_dolar_blue(df, horas_prediccion)
-        st.subheader(f"Predicción para las próximas {horas_prediccion} horas")
+        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 6, 12, 24, 36])
+        df_predicciones = predecir_dolar_blue(df, dias_prediccion)
+        st.subheader(f"Predicción para los próximos {dias_prediccion} días")
         st.dataframe(df_predicciones)
-        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {horas_prediccion} horas")
+        fig = px.line(df_predicciones, x='Fecha', y='Predicción valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
         st.plotly_chart(fig)
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
 def obtener_precio_dolar(tipo):
     """Obtiene el precio del dólar desde la API con manejo de errores y caché."""
     try:
