@@ -16,6 +16,10 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from textblob import TextBlob
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
@@ -356,6 +360,50 @@ def predecir_lstm(df):
     y_pred = scaler.inverse_transform(y_pred_scaled)
     return pd.DataFrame({'Fecha': futuro, 'Predicción valor': y_pred.flatten()})
 
+# =========================
+# 📊 ANÁLISIS DE SENTIMIENTO
+# =========================
+
+def obtener_noticias():
+    """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
+    try:
+        feed_url = "https://news.google.com/rss/search?q=dólar+Argentina&hl=es-419&gl=AR&ceid=AR:es"
+        feed = feedparser.parse(feed_url)
+        noticias = []
+        for entry in feed.entries[:10]:
+            noticias.append({
+                'titulo': entry.title,
+                'enlace': entry.link,
+                'fecha': entry.published if 'published' in entry else "Fecha no disponible",
+                'fuente': entry.source.title if 'source' in entry else "Fuente desconocida"
+            })
+        return noticias if noticias else [{"titulo": "No hay noticias disponibles", "enlace": "#", "fecha": "", "fuente": ""}]
+    except Exception as e:
+        return [{"titulo": f"Error al obtener noticias: {e}", "enlace": "#", "fecha": "", "fuente": ""}]
+
+def analizar_sentimiento(texto):
+    """Analiza el sentimiento de un texto usando TextBlob y VADER."""
+    sia = SentimentIntensityAnalyzer()
+    blob = TextBlob(texto)
+    polaridad_textblob = blob.sentiment.polarity
+    vader_score = sia.polarity_scores(texto)['compound']
+    promedio = (polaridad_textblob + vader_score) / 2
+    if promedio > 0.1:
+        return "Positivo"
+    elif promedio < -0.1:
+        return "Negativo"
+    else:
+        return "Neutro"
+
+def mostrar_analisis_sentimiento():
+    st.title("📰 Análisis de Sentimiento sobre el Dólar")
+    noticias = obtener_noticias()
+    for noticia in noticias:
+        sentimiento = analizar_sentimiento(noticia['titulo'])
+        st.write(f"**{noticia['titulo']}** ({sentimiento})")
+        st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
+        st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
+        st.markdown("---")
 
 # =========================
 # 📌 MENÚ PRINCIPAL
