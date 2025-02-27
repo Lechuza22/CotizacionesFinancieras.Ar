@@ -15,10 +15,13 @@ import itertools
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from textblob import TextBlob
+from tensorflow.keras.layers import LSTM, Densefrom textblob 
+import TextBlob
+import nltk
+nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
 nltk.download('vader_lexicon')
+from nltk.sentiment import SentimentIntensityAnalyzer
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
