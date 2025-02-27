@@ -250,6 +250,109 @@ def mostrar_noticias():
         st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
         st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
         st.markdown("---")
+# =========================
+# 📊 ANÁLISIS TÉCNICO
+# =========================
+
+def calcular_indicadores(df):
+    df['SMA_7'] = df['valor'].rolling(window=7).mean()
+    df['EMA_7'] = df['valor'].ewm(span=7, adjust=False).mean()
+    df['RSI'] = calcular_rsi(df['valor'], 14)
+    df['Upper_BB'], df['Lower_BB'] = calcular_bollinger_bands(df['valor'])
+    return df
+
+def calcular_rsi(series, window=14):
+    delta = series.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def calcular_bollinger_bands(series, window=20, num_std=2):
+    sma = series.rolling(window=window).mean()
+    std = series.rolling(window=window).std()
+    upper_band = sma + (std * num_std)
+    lower_band = sma - (std * num_std)
+    return upper_band, lower_band
+
+def mostrar_analisis_tecnico():
+    st.title("📊 Análisis Técnico del Dólar Blue")
+    df = cargar_datos()
+    if df is not None and not df.empty:
+        df = calcular_indicadores(df)
+        st.subheader("Indicadores Técnicos Clásicos")
+        fig = px.line(df, x=df.index, y=['valor', 'SMA_7', 'EMA_7'], title="Media Móvil Simple y Exponencial")
+        st.plotly_chart(fig)
+
+        fig_bb = px.line(df, x=df.index, y=['valor', 'Upper_BB', 'Lower_BB'], title="Bandas de Bollinger")
+        st.plotly_chart(fig_bb)
+
+        fig_rsi = px.line(df, x=df.index, y=['RSI'], title="Índice de Fuerza Relativa (RSI)")
+        st.plotly_chart(fig_rsi)
+
+        st.write("El RSI por debajo de 30 indica sobreventa y por encima de 70 indica sobrecompra.")
+        
+        st.subheader("📈 Modelos de Machine Learning para Predicción")
+        modelo_seleccionado = st.selectbox("Seleccione un modelo:", ["Regresión Lineal", "Random Forest", "LSTM"])
+        
+        if modelo_seleccionado == "Regresión Lineal":
+            predicciones = predecir_regresion_lineal(df)
+        elif modelo_seleccionado == "Random Forest":
+            predicciones = predecir_random_forest(df)
+        elif modelo_seleccionado == "LSTM":
+            predicciones = predecir_lstm(df)
+
+        st.subheader("Predicción del Precio del Dólar Blue")
+        st.dataframe(predicciones)
+        fig_pred = px.line(predicciones, x='Fecha', y='Predicción valor', title=f"Predicción con {modelo_seleccionado}")
+        st.plotly_chart(fig_pred)
+    else:
+        st.warning("⚠️ No se pudieron obtener los datos históricos para realizar el análisis técnico.")
+
+# Modelos de ML
+
+def predecir_regresion_lineal(df):
+    df['timestamp'] = df.index.astype(int) / 10**9
+    X = df[['timestamp']].values.reshape(-1, 1)
+    y = df['valor'].values
+    modelo = LinearRegression()
+    modelo.fit(X, y)
+    futuro = pd.date_range(df.index[-1] + timedelta(hours=1), periods=24, freq='H')
+    X_futuro = np.array(futuro.astype(int) / 10**9).reshape(-1, 1)
+    y_pred = modelo.predict(X_futuro)
+    return pd.DataFrame({'Fecha': futuro, 'Predicción valor': y_pred})
+
+def predecir_random_forest(df):
+    df['timestamp'] = df.index.astype(int) / 10**9
+    X = df[['timestamp']].values.reshape(-1, 1)
+    y = df['valor'].values
+    modelo = RandomForestRegressor(n_estimators=100, random_state=42)
+    modelo.fit(X, y)
+    futuro = pd.date_range(df.index[-1] + timedelta(hours=1), periods=24, freq='H')
+    X_futuro = np.array(futuro.astype(int) / 10**9).reshape(-1, 1)
+    y_pred = modelo.predict(X_futuro)
+    return pd.DataFrame({'Fecha': futuro, 'Predicción valor': y_pred})
+
+def predecir_lstm(df):
+    df['timestamp'] = df.index.astype(int) / 10**9
+    X = df[['timestamp']].values.reshape(-1, 1)
+    y = df['valor'].values.reshape(-1, 1)
+    scaler = MinMaxScaler()
+    y_scaled = scaler.fit_transform(y)
+    modelo = Sequential([
+        LSTM(50, return_sequences=True, input_shape=(1, 1)),
+        LSTM(50, return_sequences=False),
+        Dense(25),
+        Dense(1)
+    ])
+    modelo.compile(optimizer='adam', loss='mean_squared_error')
+    modelo.fit(X, y_scaled, epochs=10, batch_size=1, verbose=0)
+    futuro = pd.date_range(df.index[-1] + timedelta(hours=1), periods=24, freq='H')
+    X_futuro = np.array(futuro.astype(int) / 10**9).reshape(-1, 1)
+    y_pred_scaled = modelo.predict(X_futuro)
+    y_pred = scaler.inverse_transform(y_pred_scaled)
+    return pd.DataFrame({'Fecha': futuro, 'Predicción valor': y_pred.flatten()})
+
 
 # =========================
 # 📌 MENÚ PRINCIPAL
