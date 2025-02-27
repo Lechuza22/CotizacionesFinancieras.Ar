@@ -9,3 +9,5 @@ requests
 beautifulsoup4
 statsmodels
 matplotlib
+tensorflow
+
