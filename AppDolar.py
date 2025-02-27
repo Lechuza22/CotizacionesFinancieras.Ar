@@ -362,7 +362,7 @@ def predecir_lstm(df):
 # =========================
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
-    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico"])
+    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento"])
     if menu_seleccionado == "Precios":
         mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
@@ -375,4 +375,6 @@ if __name__ == "__main__":
         mostrar_prediccion()
     elif menu_seleccionado == "Análisis Técnico":
         mostrar_analisis_tecnico()
+    elif menu_seleccionado == "Análisis de Sentimiento":
+        mostrar_analisis_sentimiento()
     
