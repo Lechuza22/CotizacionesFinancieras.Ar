@@ -18,7 +18,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from textblob import TextBlob
 from nltk.sentiment import SentimentIntensityAnalyzer
-
+nltk.download('vader_lexicon')
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
