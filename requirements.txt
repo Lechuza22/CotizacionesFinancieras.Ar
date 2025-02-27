@@ -10,4 +10,5 @@ beautifulsoup4
 statsmodels
 matplotlib
 tensorflow
-
+textblob
+nltk
