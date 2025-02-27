@@ -256,7 +256,7 @@ def mostrar_noticias():
 # =========================
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
-    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue"])
+    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico"])
     if menu_seleccionado == "Precios":
         mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
@@ -267,3 +267,6 @@ if __name__ == "__main__":
         mostrar_noticias()
     elif menu_seleccionado == "Predicción del Dólar Blue":
         mostrar_prediccion()
+    elif menu_seleccionado == "Análisis Técnico":
+        mostrar_analisis_tecnico()
+    
