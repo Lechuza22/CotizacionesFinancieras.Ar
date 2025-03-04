@@ -428,18 +428,27 @@ def mostrar_evolucion_inflacion():
         fig = px.line(df, x='fecha', y='valor', title='Evolución Histórica de la Inflación en Argentina')
         st.plotly_chart(fig)
 
-# Gráfico de comparación Inflación vs Dólar Blue
+# Gráfico de comparación Inflación vs Dólar Blue con doble eje Y
 def mostrar_comparacion_inflacion_dolar(df_dolar):
     df_inflacion = cargar_datos_inflacion()
     if df_inflacion is not None and df_dolar is not None:
         df_comb = pd.merge(df_inflacion, df_dolar, left_on='fecha', right_on='category', how='inner')
         
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue', opacity=0.7))
-        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red'))
         
-        fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha',
-                          yaxis=dict(title='Valores Reales', showgrid=True, tickfont=dict(size=14)))
+        # Agregar barras para la inflación en el eje izquierdo
+        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue', opacity=0.7, yaxis='y1'))
+        
+        # Agregar línea para el dólar en el eje derecho
+        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red', yaxis='y2'))
+        
+        fig.update_layout(
+            title='Comparación Inflación vs. Dólar Blue',
+            xaxis=dict(title='Fecha'),
+            yaxis=dict(title='Inflación (%)', showgrid=True, tickfont=dict(size=14), side='left'),
+            yaxis2=dict(title='Dólar Blue ($)', overlaying='y', side='right', tickfont=dict(size=14)),
+            legend=dict(x=0, y=1)
+        )
         
         st.plotly_chart(fig)
 
