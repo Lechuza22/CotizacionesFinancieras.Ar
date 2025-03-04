@@ -435,12 +435,13 @@ def mostrar_comparacion_inflacion_dolar(df_dolar):
         df_comb = pd.merge(df_inflacion, df_dolar, left_on='fecha', right_on='category', how='inner')
         
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue'))
+        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue', opacity=0.7))
         fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red'))
         
-        fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha', yaxis_title='Valor', 
-                          yaxis=dict(title='Inflación (%)', side='left'), 
-                          yaxis2=dict(title='Dólar Blue ($)', overlaying='y', side='right'))
+        fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha',
+                          yaxis=dict(title='Inflación (%)', side='left', showgrid=True, tickfont=dict(size=14)),
+                          yaxis2=dict(title='Dólar Blue ($)', overlaying='y', side='right', tickfont=dict(size=14)),
+                          barmode='overlay')
         
         st.plotly_chart(fig)
 
