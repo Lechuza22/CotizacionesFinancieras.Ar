@@ -479,13 +479,100 @@ def mostrar_prediccion_inflacion():
         fig = px.line(df_pred, x='Fecha', y='Predicción Inflación', title=f'Predicción de Inflación a {dias} días')
         st.plotly_chart(fig)
 
+# Cargar datos de inflación
+def cargar_datos_inflacion():
+    try:
+        with open("index.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        df['fecha'] = pd.to_datetime(df['fecha'])
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos de inflación: {e}")
+        return None
+# =========================
+# 📊 Riesgo Pais
+# =========================
+
+# Cargar datos de riesgo país
+def cargar_datos_riesgo_pais():
+    try:
+        with open("indexRP.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        df['fecha'] = pd.to_datetime(df['fecha'])
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos de riesgo país: {e}")
+        return None
+
+# Gráfico de evolución histórica del riesgo país
+def mostrar_evolucion_riesgo_pais():
+    df = cargar_datos_riesgo_pais()
+    if df is not None:
+        fig = px.line(df, x='fecha', y='valor', title='Evolución Histórica del Riesgo País en Argentina')
+        st.plotly_chart(fig)
+
+# Gráfico de comparación Inflación vs Riesgo País con doble eje Y
+def mostrar_comparacion_inflacion_riesgo():
+    df_inflacion = cargar_datos_inflacion()
+    df_riesgo = cargar_datos_riesgo_pais()
+    if df_inflacion is not None and df_riesgo is not None:
+        df_comb = pd.merge(df_inflacion, df_riesgo, on='fecha', how='inner')
+        
+        fig = go.Figure()
+        
+        # Agregar barras para la inflación en el eje izquierdo
+        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue', opacity=0.7, yaxis='y1'))
+        
+        # Agregar línea para el riesgo país en el eje derecho
+        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Riesgo País', marker_color='red', yaxis='y2'))
+        
+        fig.update_layout(
+            title='Comparación Inflación vs. Riesgo País',
+            xaxis=dict(title='Fecha'),
+            yaxis=dict(title='Inflación (%)', showgrid=True, tickfont=dict(size=14), side='left'),
+            yaxis2=dict(title='Riesgo País', overlaying='y', side='right', tickfont=dict(size=14)),
+            legend=dict(x=0, y=1)
+        )
+        
+        st.plotly_chart(fig)
+
+# Predicción de riesgo país
+def predecir_riesgo_pais(dias):
+    df = cargar_datos_riesgo_pais()
+    if df is not None:
+        df['timestamp'] = df['fecha'].astype(int) / 10**9
+        X = df[['timestamp']].values.reshape(-1, 1)
+        y = df['valor'].values
+        modelo = LinearRegression()
+        modelo.fit(X, y)
+        
+        futuro = pd.date_range(df['fecha'].max() + timedelta(days=1), periods=dias, freq='D')
+        X_futuro = np.array(futuro.astype(int) / 10**9).reshape(-1, 1)
+        y_pred = modelo.predict(X_futuro)
+        
+        df_pred = pd.DataFrame({'Fecha': futuro, 'Predicción Riesgo País': y_pred})
+        return df_pred
+    return None
+
+def mostrar_prediccion_riesgo_pais():
+    st.subheader("Predicción del Riesgo País")
+    dias = st.selectbox("Seleccione el período de predicción:", [15, 30, 60])
+    df_pred = predecir_riesgo_pais(dias)
+    if df_pred is not None:
+        st.dataframe(df_pred)
+        fig = px.line(df_pred, x='Fecha', y='Predicción Riesgo País', title=f'Predicción del Riesgo País a {dias} días')
+        st.plotly_chart(fig)
+
 # =========================
 # 📌 MENÚ PRINCIPAL
 # =========================
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
     menu_seleccionado = st.sidebar.radio("Seleccione una opción:",
-                                         ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación"])
+                                         ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación", "Índice de Riesgo País"])
+    
     if menu_seleccionado == "Precios":
         mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
@@ -509,3 +596,11 @@ if __name__ == "__main__":
             mostrar_comparacion_inflacion_dolar(df_dolar)
         elif submenu == "Predicción de Inflación":
             mostrar_prediccion_inflacion()
+    elif menu_seleccionado == "Índice de Riesgo País":
+        submenu = st.sidebar.radio("Seleccione una opción:", ["Gráfico de evolución histórica", "Inflación vs Riesgo País", "Predicción del Riesgo País"])
+        if submenu == "Gráfico de evolución histórica":
+            mostrar_evolucion_riesgo_pais()
+        elif submenu == "Inflación vs Riesgo País":
+            mostrar_comparacion_inflacion_riesgo()
+        elif submenu == "Predicción del Riesgo País":
+            mostrar_prediccion_riesgo_pais()
