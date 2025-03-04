@@ -581,8 +581,6 @@ if __name__ == "__main__":
         convertir_monedas()
     elif menu_seleccionado == "Novedades y Noticias":
         mostrar_noticias()
-    elif menu_seleccionado == "Predicción del Dólar Blue":
-        mostrar_prediccion()
     elif menu_seleccionado == "Análisis Técnico":
         mostrar_analisis_tecnico()
     elif menu_seleccionado == "Análisis de Sentimiento":
