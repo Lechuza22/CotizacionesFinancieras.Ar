@@ -407,13 +407,71 @@ def mostrar_analisis_sentimiento():
         st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
         st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
         st.markdown("---")
+# =========================
+# 📊 Inflación
+# =========================
+# Cargar datos de inflación
+def cargar_datos_inflacion():
+    try:
+        with open("index.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        df['fecha'] = pd.to_datetime(df['fecha'])
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos de inflación: {e}")
+        return None
+
+# Gráfico de evolución histórica de la inflación
+def mostrar_evolucion_inflacion():
+    df = cargar_datos_inflacion()
+    if df is not None:
+        fig = px.line(df, x='fecha', y='valor', title='Evolución Histórica de la Inflación en Argentina')
+        st.plotly_chart(fig)
+
+# Gráfico de comparación Inflación vs Dólar Blue
+def mostrar_comparacion_inflacion_dolar(df_dolar):
+    df_inflacion = cargar_datos_inflacion()
+    if df_inflacion is not None and df_dolar is not None:
+        df_comb = pd.merge(df_inflacion, df_dolar, left_on='fecha', right_on='category', how='inner')
+        fig = px.line(df_comb, x='fecha', y=['valor_x', 'valor_y'], labels={'valor_x': 'Inflación (%)', 'valor_y': 'Dólar Blue ($)'},
+                      title='Comparación Inflación vs. Dólar Blue')
+        st.plotly_chart(fig)
+
+# Predicción de inflación
+def predecir_inflacion(dias):
+    df = cargar_datos_inflacion()
+    if df is not None:
+        df['timestamp'] = df['fecha'].astype(int) / 10**9
+        X = df[['timestamp']].values.reshape(-1, 1)
+        y = df['valor'].values
+        modelo = LinearRegression()
+        modelo.fit(X, y)
+        
+        futuro = pd.date_range(df['fecha'].max() + timedelta(days=1), periods=dias, freq='D')
+        X_futuro = np.array(futuro.astype(int) / 10**9).reshape(-1, 1)
+        y_pred = modelo.predict(X_futuro)
+        
+        df_pred = pd.DataFrame({'Fecha': futuro, 'Predicción Inflación': y_pred})
+        return df_pred
+    return None
+
+def mostrar_prediccion_inflacion():
+    st.subheader("Predicción de Inflación")
+    dias = st.selectbox("Seleccione el período de predicción:", [15, 30, 60])
+    df_pred = predecir_inflacion(dias)
+    if df_pred is not None:
+        st.dataframe(df_pred)
+        fig = px.line(df_pred, x='Fecha', y='Predicción Inflación', title=f'Predicción de Inflación a {dias} días')
+        st.plotly_chart(fig)
 
 # =========================
 # 📌 MENÚ PRINCIPAL
 # =========================
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
-    menu_seleccionado = st.sidebar.radio("Seleccione una opción:", ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento"])
+    menu_seleccionado = st.sidebar.radio("Seleccione una opción:",
+                                         ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación"])
     if menu_seleccionado == "Precios":
         mostrar_precios()
     elif menu_seleccionado == "Variación de Cotizaciones":
@@ -428,4 +486,12 @@ if __name__ == "__main__":
         mostrar_analisis_tecnico()
     elif menu_seleccionado == "Análisis de Sentimiento":
         mostrar_analisis_sentimiento()
-    
+    elif menu_seleccionado == "Índice de Inflación":
+        submenu = st.sidebar.radio("Seleccione una opción:", ["Gráfico de evolución histórica", "Inflación vs Dólar Blue", "Predicción de Inflación"])
+        if submenu == "Gráfico de evolución histórica":
+            mostrar_evolucion_inflacion()
+        elif submenu == "Inflación vs Dólar Blue":
+            df_dolar = cargar_datos()  # Cargar datos del dólar blue
+            mostrar_comparacion_inflacion_dolar(df_dolar)
+        elif submenu == "Predicción de Inflación":
+            mostrar_prediccion_inflacion()
