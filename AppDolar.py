@@ -439,7 +439,7 @@ def mostrar_comparacion_inflacion_dolar(df_dolar):
         fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red'))
         
         fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha',
-                          yaxis=dict(title='Inflación (%)', side='left', showgrid=True, tickfont=dict(size=14)),
+                          yaxis=dict(title='Inflación (%)', side='left', showgrid=True, tickfont=dict(size=50)),
                           yaxis2=dict(title='Dólar Blue ($)', overlaying='y', side='right', tickfont=dict(size=14)),
                           barmode='overlay')
         
