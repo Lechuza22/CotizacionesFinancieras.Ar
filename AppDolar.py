@@ -571,7 +571,7 @@ def mostrar_prediccion_riesgo_pais():
 if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
     menu_seleccionado = st.sidebar.radio("Seleccione una opción:",
-                                         ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Predicción del Dólar Blue", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación", "Índice de Riesgo País"])
+                                         ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación", "Índice de Riesgo País"])
     
     if menu_seleccionado == "Precios":
         mostrar_precios()
