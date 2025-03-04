@@ -434,16 +434,12 @@ def mostrar_comparacion_inflacion_dolar(df_dolar):
     if df_inflacion is not None and df_dolar is not None:
         df_comb = pd.merge(df_inflacion, df_dolar, left_on='fecha', right_on='category', how='inner')
         
-        # Normalizar los datos para que sean comparables
-        df_comb['valor_x_norm'] = (df_comb['valor_x'] - df_comb['valor_x'].min()) / (df_comb['valor_x'].max() - df_comb['valor_x'].min()) * 100
-        df_comb['valor_y_norm'] = (df_comb['valor_y'] - df_comb['valor_y'].min()) / (df_comb['valor_y'].max() - df_comb['valor_y'].min()) * 100
-        
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x_norm'], name='Inflación (%)', marker_color='blue', opacity=0.7))
-        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y_norm'], name='Dólar Blue ($)', marker_color='red'))
+        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue', opacity=0.7))
+        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red'))
         
-        fig.update_layout(title='Comparación Normalizada Inflación vs. Dólar Blue', xaxis_title='Fecha',
-                          yaxis=dict(title='Valores Normalizados (Escala 0-100)', showgrid=True, tickfont=dict(size=14)))
+        fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha',
+                          yaxis=dict(title='Valores Reales', showgrid=True, tickfont=dict(size=14)))
         
         st.plotly_chart(fig)
 
