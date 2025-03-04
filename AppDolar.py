@@ -3,6 +3,7 @@ import http.client
 import json
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import feedparser
 from sklearn.linear_model import LinearRegression
@@ -18,8 +19,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from textblob import TextBlob
 import nltk
-nltk.download('vader_lexicon')
-from nltk.sentiment import SentimentIntensityAnalyzer
 nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
 
@@ -434,8 +433,15 @@ def mostrar_comparacion_inflacion_dolar(df_dolar):
     df_inflacion = cargar_datos_inflacion()
     if df_inflacion is not None and df_dolar is not None:
         df_comb = pd.merge(df_inflacion, df_dolar, left_on='fecha', right_on='category', how='inner')
-        fig = px.line(df_comb, x='fecha', y=['valor_x', 'valor_y'], labels={'valor_x': 'Inflación (%)', 'valor_y': 'Dólar Blue ($)'},
-                      title='Comparación Inflación vs. Dólar Blue')
+        
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=df_comb['fecha'], y=df_comb['valor_x'], name='Inflación (%)', marker_color='blue'))
+        fig.add_trace(go.Line(x=df_comb['fecha'], y=df_comb['valor_y'], name='Dólar Blue ($)', marker_color='red'))
+        
+        fig.update_layout(title='Comparación Inflación vs. Dólar Blue', xaxis_title='Fecha', yaxis_title='Valor', 
+                          yaxis=dict(title='Inflación (%)', side='left'), 
+                          yaxis2=dict(title='Dólar Blue ($)', overlaying='y', side='right'))
+        
         st.plotly_chart(fig)
 
 # Predicción de inflación
