@@ -37,10 +37,6 @@ st.sidebar.title("📊 Cotizaciones financieras.Ar")
 # Descripción breve en el menú lateral
 st.sidebar.write("Análisis del dólar, inflación y riesgo país en Argentina.")
 
-# Opciones del menú de navegación
-menu = st.sidebar.radio("📌 Selecciona una opción:", 
-                        ["Inicio", "Cotización", "Noticias", "Análisis Técnico", "Predicciones"])
-
 # Contenido principal según la selección en el menú
 st.title("📊 Cotizaciones financieras.Ar")
 
