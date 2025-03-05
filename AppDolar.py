@@ -569,6 +569,9 @@ def mostrar_prediccion_riesgo_pais():
 # =========================
 # 📌 google sheet
 # =========================
+# Configurar la página
+st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
+
 # URL de la hoja de cálculo de Google Sheets en formato CSV
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1LdW7KvqsT5ifoAhJ_wetpIEaDzDYKPGyUHStwpsQVYo/gviz/tq?tqx=out:csv"
 
@@ -597,11 +600,9 @@ def predecir_dolar_blue_arima(df, dias_prediccion=7):
     df = df.sort_index()
     serie = df['Promedio']
     
-    # Ajustar modelo ARIMA
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
     
-    # Generar predicciones
     predicciones = modelo_fit.forecast(steps=dias_prediccion)
     fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion, freq='D')
     df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Valor': predicciones})
@@ -609,30 +610,32 @@ def predecir_dolar_blue_arima(df, dias_prediccion=7):
     return df_predicciones
 
 
-def mostrar_prediccion():
-    """Muestra la predicción del dólar blue en Streamlit."""
-    st.title("📈 Predicción del Dólar Blue")
+def mostrar_analisis_tecnico():
+    st.title("📊 Análisis Técnico del Dólar Blue")
     df = cargar_datos_desde_google_sheets()
     
     if df is not None and not df.empty:
         st.subheader("Datos Históricos")
         st.dataframe(df.tail(10))
         
-        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 7, 14])
-        df_predicciones = predecir_dolar_blue_arima(df, dias_prediccion)
+        modelo_seleccionado = st.selectbox("Seleccione un modelo de predicción:", ["ARIMA", "Regresión Lineal", "Random Forest"])
         
-        if df_predicciones is not None:
-            st.subheader(f"Predicción para los próximos {dias_prediccion} días")
-            st.dataframe(df_predicciones)
-            
-            fig = px.line(df_predicciones, x='Fecha', y='Predicción Valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+        if modelo_seleccionado == "ARIMA":
+            predicciones = predecir_dolar_blue_arima(df)
+        elif modelo_seleccionado == "Regresión Lineal":
+            predicciones = predecir_regresion_lineal(df)
+        elif modelo_seleccionado == "Random Forest":
+            predicciones = predecir_random_forest(df)
+        
+        if predicciones is not None:
+            st.subheader(f"Predicción del Dólar Blue con {modelo_seleccionado}")
+            st.dataframe(predicciones)
+            fig = px.line(predicciones, x='Fecha', y='Predicción Valor', title=f"Predicción del Dólar Blue con {modelo_seleccionado}")
             st.plotly_chart(fig)
         else:
             st.warning("No se pudo generar la predicción debido a datos insuficientes.")
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
-
-
 
 
 
@@ -643,6 +646,7 @@ if __name__ == "__main__":
     st.sidebar.title("📌 Menú")
     menu_seleccionado = st.sidebar.radio("Seleccione una opción:",
                                          ["Precios", "Variación de Cotizaciones", "Convertir", "Novedades y Noticias", "Análisis Técnico", "Análisis de Sentimiento", "Índice de Inflación", "Índice de Riesgo País"])
+    
     
     if menu_seleccionado == "Precios":
         mostrar_precios()
