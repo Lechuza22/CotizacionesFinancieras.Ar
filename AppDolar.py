@@ -27,17 +27,22 @@ from wordcloud import WordCloud, STOPWORDS
 
 # Configurar la página
 st.set_page_config(page_title="💵 Cotizaciones financieras.Ar", page_icon="💵", layout="wide")
-# Cargar la imagen
-imagen_path = "Dolar.jpg"  # Asegúrate de que este archivo esté en la misma carpeta de tu script
+# Cargar la imagen y mostrarla en el menú lateral
+imagen_path = "Dolar.jpg"  # Asegúrate de que este archivo esté en la misma carpeta que tu script
+st.sidebar.image(imagen_path, use_column_width=True)
 
-# Mostrar la imagen como portada
-st.image(imagen_path, use_column_width=True)
+# Título en el menú lateral
+st.sidebar.title("📊 Cotizaciones financieras.Ar")
 
-# Título de la aplicación
+# Descripción breve en el menú lateral
+st.sidebar.write("Análisis del dólar, inflación y riesgo país en Argentina.")
+
+# Opciones del menú de navegación
+menu = st.sidebar.radio("📌 Selecciona una opción:", 
+                        ["Inicio", "Cotización", "Noticias", "Análisis Técnico", "Predicciones"])
+
+# Contenido principal según la selección en el menú
 st.title("📊 Cotizaciones financieras.Ar")
-
-# Descripción breve
-st.write("Bienvenido a la plataforma de análisis del dólar en Argentina, inflación riesgo país. Aquí puedes ver las últimas noticias, predicciones, análisis técnicos, cotizaciones y tendencias del mercado.")
 
 
 
