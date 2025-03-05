@@ -35,7 +35,7 @@ st.sidebar.image(imagen_path, use_container_width=True)
 st.sidebar.title("📊 Cotizaciones financieras.Ar")
 
 # Descripción breve en el menú lateral
-st.sidebar.write("Análisis financiero del dólar inflación, riesgo país y noticias en Argentina.")
+st.sidebar.write("Análisis financiero del dólar, inflación, riesgo país y noticias en Argentina.")
 
 
 @st.cache_data
