@@ -21,7 +21,9 @@ from textblob import TextBlob
 import nltk
 nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from prophet import Prophet
+from wordcloud import WordCloud, STOPWORDS
 
 # Configurar la página
 st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
@@ -367,6 +369,10 @@ def predecir_lstm(df):
 # 📊 ANÁLISIS DE SENTIMIENTO
 # =========================
 
+# Descargar stopwords en español
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
 def obtener_noticias():
     """Obtiene noticias sobre el dólar en Argentina desde Google News RSS."""
     try:
@@ -398,15 +404,45 @@ def analizar_sentimiento(texto):
     else:
         return "Neutro"
 
+def generar_nube_palabras(noticias):
+    """Genera una nube de palabras a partir de los títulos de las noticias."""
+    texto = " ".join([noticia['titulo'] for noticia in noticias])
+    
+    # Filtrar palabras vacías en español
+    stopwords_es = set(stopwords.words('spanish'))
+    
+    nube_palabras = WordCloud(
+        width=800, height=400,
+        background_color="white",
+        stopwords=stopwords_es,
+        max_words=100  # Puedes cambiar a 50 si quieres menos palabras
+    ).generate(texto)
+    
+    return nube_palabras
+
 def mostrar_analisis_sentimiento():
     st.title("📰 Análisis de Sentimiento sobre el Dólar")
+
+    # Obtener noticias
     noticias = obtener_noticias()
+    
+    # Generar nube de palabras
+    nube_palabras = generar_nube_palabras(noticias)
+    
+    # Mostrar nube de palabras
+    st.subheader("🌥️ Nube de Palabras sobre el Dólar en Noticias")
+    fig, ax = plt.subplots()
+    ax.imshow(nube_palabras, interpolation="bilinear")
+    ax.axis("off")
+    st.pyplot(fig)
+
+    # Mostrar noticias con sentimiento
+    st.subheader("📊 Análisis de Sentimiento por Titulares")
     for noticia in noticias:
         sentimiento = analizar_sentimiento(noticia['titulo'])
         st.write(f"**{noticia['titulo']}** ({sentimiento})")
         st.write(f"📅 {noticia['fecha']} | 📰 {noticia['fuente']}")
         st.markdown(f"[Ver noticia completa]({noticia['enlace']})")
-        st.markdown("---")
 # =========================
 # 📊 Inflación
 # =========================
