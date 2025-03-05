@@ -647,12 +647,17 @@ def mostrar_prediccion_dolar():
 
     df = st.session_state.df_dolar
 
-    # Botón para actualizar los datos
-    if st.button("🔄 Actualizar Datos", key="actualizar_datos"):
-        st.cache_data.clear()  # Limpiar caché para recargar datos
-        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
-        st.success("Datos actualizados correctamente ✅")
-        st.experimental_rerun()  # Forzar recarga de la interfaz
+      # Agregar un contenedor para el botón y su funcionalidad
+    with st.container():
+        st.write("### 🔄 Actualizar Datos")  # Agregar un título para dar visibilidad al botón
+        
+        st.write("DEBUG: Renderizando botón")  # Mensaje de depuración para verificar si el botón se está mostrando
+
+        if st.button("Actualizar Datos", key="actualizar_datos"):
+            st.cache_data.clear()  # Limpiar caché para recargar datos
+            st.session_state.df_dolar = cargar_datos_desde_google_sheets()
+            st.success("Datos actualizados correctamente ✅")
+            st.experimental_rerun()  # Forzar recarga de la interfaz
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos")
