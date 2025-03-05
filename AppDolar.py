@@ -621,30 +621,40 @@ GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1LdW7KvqsT5ifoAhJ_wet
 
 @st.cache_data
 def cargar_datos_desde_google_sheets():
-    """Carga **todos** los datos del dólar blue desde la hoja de cálculo de Google."""
+    """Carga TODOS los datos desde Google Sheets y soluciona problemas de formato."""
     try:
         df = pd.read_csv(GOOGLE_SHEET_URL)
-        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']  # Ajustar nombres de columnas según la estructura real
-        df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+
+        # 🔹 Verificar que la estructura de columnas sea la correcta
+        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']
+
+        # 🔹 Intentar convertir la fecha correctamente
+        df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce', dayfirst=True)
+
+        # 🔹 Convertir columnas numéricas y evitar eliminación de filas válidas
+        df['Compra'] = pd.to_numeric(df['Compra'], errors='coerce')
+        df['Venta'] = pd.to_numeric(df['Venta'], errors='coerce')
         df['Promedio'] = pd.to_numeric(df['Promedio'], errors='coerce')
 
-        # **Ordenar por fecha ascendente para asegurar que todos los datos estén en orden**
-        df = df.dropna().sort_values(by="Fecha", ascending=True)
+        # 🔹 Asegurar que TODAS las filas estén en orden
+        df = df.sort_values(by="Fecha", ascending=True)
 
+        # 🔹 Verificar que hay más de una fila en la tabla
+        if df.shape[0] < 2:
+            st.warning("⚠️ Advertencia: Solo hay una fila en los datos de Google Sheets. Es posible que falten registros.")
+        
         return df
     except Exception as e:
         st.error(f"Error al cargar los datos desde Google Sheets: {e}")
         return None
 
 def predecir_dolar_blue_arima(df, dias_prediccion=7):
-    """Predice el valor del dólar blue usando ARIMA basándose en TODOS los datos históricos."""
+    """Predice el valor del dólar blue usando ARIMA con TODOS los datos."""
     if len(df) < 10:
         st.warning("⚠️ No hay suficientes datos históricos para realizar una predicción confiable.")
         return None
 
-    df = df.sort_values(by="Fecha", ascending=True)
     serie = df['Promedio']
-
     modelo = ARIMA(serie, order=(1,1,1))
     modelo_fit = modelo.fit()
 
@@ -672,13 +682,13 @@ def predecir_dolar_blue_prophet(df, dias_prediccion=7):
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
 
-    # **Carga automática de datos sin necesidad de botón**
-    st.cache_data.clear()  # Limpiar caché para forzar recarga
+    # 🔹 **Forzar la actualización de datos**
+    st.cache_data.clear()
     df = cargar_datos_desde_google_sheets()
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos Completos")
-        st.dataframe(df)  # **Muestra TODOS los datos históricos**
+        st.dataframe(df)  # 🔹 Mostrar **todas** las filas
 
         modelo_seleccionado = st.selectbox("📌 Seleccione un modelo de predicción:", ["ARIMA", "Prophet"])
 
