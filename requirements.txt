@@ -13,3 +13,5 @@ tensorflow
 textblob
 nltk
 prophet
+wordcloud
+vaderSentiment
