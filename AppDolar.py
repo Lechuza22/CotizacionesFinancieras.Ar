@@ -641,23 +641,14 @@ def cargar_datos_desde_google_sheets():
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
 
-    # Verificar si los datos están en sesión, si no, cargarlos
-    if "df_dolar" not in st.session_state:
-        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
-
-    df = st.session_state.df_dolar
-
-      # Agregar un contenedor para el botón y su funcionalidad
-    with st.container():
-        st.write("### 🔄 Actualizar Datos")  # Agregar un título para dar visibilidad al botón
-        
-        st.write("DEBUG: Renderizando botón")  # Mensaje de depuración para verificar si el botón se está mostrando
-
-        if st.button("Actualizar Datos", key="actualizar_datos"):
-            st.cache_data.clear()  # Limpiar caché para recargar datos
-            st.session_state.df_dolar = cargar_datos_desde_google_sheets()
-            st.success("Datos actualizados correctamente ✅")
-            st.experimental_rerun()  # Forzar recarga de la interfaz
+    # Cargar o actualizar datos
+    if st.button("🔄 Actualizar Datos"):
+        st.cache_data.clear()  # Limpiar caché para recargar datos
+        df = cargar_datos_desde_google_sheets()
+        st.session_state.df_dolar = df
+        st.success("Datos actualizados correctamente ✅")
+    else:
+        df = st.session_state.get("df_dolar", cargar_datos_desde_google_sheets())
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos")
@@ -665,6 +656,7 @@ def mostrar_prediccion_dolar():
 
         modelo_seleccionado = st.selectbox("📌 Seleccione un modelo de predicción:", ["ARIMA", "Prophet"])
 
+        # Aquí puedes llamar a tus funciones de predicción
         if modelo_seleccionado == "ARIMA":
             predicciones = predecir_dolar_blue_arima(df)
         elif modelo_seleccionado == "Prophet":
@@ -679,6 +671,7 @@ def mostrar_prediccion_dolar():
             st.warning("⚠️ No se pudo generar la predicción debido a datos insuficientes.")
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 # =========================
 # 📌 MENÚ PRINCIPAL
