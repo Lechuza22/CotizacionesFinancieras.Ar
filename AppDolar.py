@@ -616,8 +616,8 @@ def mostrar_prediccion_riesgo_pais():
 # =========================
 # 📌 Dolar by Sheet predicción
 # =========================
+# URL de la hoja de cálculo de Google Sheets en formato CSV 
 
-# URL de la hoja de cálculo de Google Sheets en formato CSV
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1LdW7KvqsT5ifoAhJ_wetpIEaDzDYKPGyUHStwpsQVYo/gviz/tq?tqx=out:csv"
 
 @st.cache_data
@@ -625,7 +625,7 @@ def cargar_datos_desde_google_sheets():
     """Carga los datos del dólar blue desde la hoja de cálculo de Google."""
     try:
         df = pd.read_csv(GOOGLE_SHEET_URL)
-        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']
+        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']  # Ajustar nombres de columnas según la estructura
         df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
         df['Promedio'] = pd.to_numeric(df['Promedio'], errors='coerce')
         df = df.dropna()
@@ -635,38 +635,69 @@ def cargar_datos_desde_google_sheets():
         st.error(f"Error al cargar los datos desde Google Sheets: {e}")
         return None
 
-# =========================
-# 📌 Función para mostrar predicción (Carga Automática)
-# =========================
+
+def predecir_dolar_blue_arima(df, dias_prediccion=7):
+    """Predice el valor del dólar blue usando ARIMA."""
+    if len(df) < 10:
+        st.warning("No hay suficientes datos históricos para realizar una predicción confiable.")
+        return None
+    
+    df = df.sort_index()
+    serie = df['Promedio']
+    
+    modelo = ARIMA(serie, order=(1,1,1))
+    modelo_fit = modelo.fit()
+    
+    predicciones = modelo_fit.forecast(steps=dias_prediccion)
+    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion, freq='D')
+    df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Valor': predicciones})
+    
+    return df_predicciones
+
+
+def predecir_dolar_blue_prophet(df, dias_prediccion=7):
+    """Predice el valor del dólar blue usando Prophet."""
+    df_prophet = df.reset_index()[['Fecha', 'Promedio']]
+    df_prophet.columns = ['ds', 'y']
+    
+    modelo = Prophet()
+    modelo.fit(df_prophet)
+    
+    futuro = modelo.make_future_dataframe(periods=dias_prediccion)
+    predicciones = modelo.predict(futuro)
+    
+    df_predicciones = predicciones[['ds', 'yhat']].rename(columns={'ds': 'Fecha', 'yhat': 'Predicción Valor'})
+    df_predicciones = df_predicciones[df_predicciones['Fecha'] > df.index[-1]]
+    
+    return df_predicciones
+
+
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
-
-    # **Cargar datos AUTOMÁTICAMENTE cada vez que se abre esta vista**
-    st.cache_data.clear()  # Limpiar caché para forzar recarga
     df = cargar_datos_desde_google_sheets()
-    st.session_state.df_dolar = df
-
+    
     if df is not None and not df.empty:
-        st.subheader("📊 Datos Históricos")
+        st.subheader("Datos Históricos")
         st.dataframe(df.tail(10))
-
-        modelo_seleccionado = st.selectbox("📌 Seleccione un modelo de predicción:", ["ARIMA", "Prophet"])
-
-        # Aquí puedes llamar a tus funciones de predicción
+        
+        modelo_seleccionado = st.selectbox("Seleccione un modelo de predicción:", ["ARIMA", "Prophet"])
+        
         if modelo_seleccionado == "ARIMA":
             predicciones = predecir_dolar_blue_arima(df)
         elif modelo_seleccionado == "Prophet":
             predicciones = predecir_dolar_blue_prophet(df)
-
+        
         if predicciones is not None:
-            st.subheader(f"🔮 Predicción del Dólar Blue con {modelo_seleccionado}")
+            st.subheader(f"Predicción del Dólar Blue con {modelo_seleccionado}")
             st.dataframe(predicciones)
-            fig = px.line(predicciones, x='Fecha', y='Predicción Valor', title=f"📈 Predicción del Dólar Blue con {modelo_seleccionado}")
+            fig = px.line(predicciones, x='Fecha', y='Predicción Valor', title=f"Predicción del Dólar Blue con {modelo_seleccionado}")
             st.plotly_chart(fig)
         else:
-            st.warning("⚠️ No se pudo generar la predicción debido a datos insuficientes.")
+            st.warning("No se pudo generar la predicción debido a datos insuficientes.")
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
+
 
 
 # =========================
