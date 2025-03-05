@@ -625,7 +625,7 @@ def cargar_datos_desde_google_sheets():
     """Carga los datos del dólar blue desde la hoja de cálculo de Google."""
     try:
         df = pd.read_csv(GOOGLE_SHEET_URL)
-        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']  # Ajustar nombres de columnas según la estructura
+        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']
         df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
         df['Promedio'] = pd.to_numeric(df['Promedio'], errors='coerce')
         df = df.dropna()
@@ -641,14 +641,24 @@ def cargar_datos_desde_google_sheets():
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
 
-    # Cargar o actualizar datos
-    if st.button("🔄 Actualizar Datos"):
+    # Cargar datos en sesión si aún no están cargados
+    if "df_dolar" not in st.session_state:
+        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
+
+    # SECCIÓN DEL BOTÓN (Siempre Visible)
+    st.subheader("🔄 Actualización de Datos")
+    st.write("Presione el botón para actualizar los datos desde Google Sheets.")
+
+    boton_actualizar = st.button("🔄 Actualizar Datos", key="actualizar_datos")
+
+    if boton_actualizar:
         st.cache_data.clear()  # Limpiar caché para recargar datos
-        df = cargar_datos_desde_google_sheets()
-        st.session_state.df_dolar = df
-        st.success("Datos actualizados correctamente ✅")
-    else:
-        df = st.session_state.get("df_dolar", cargar_datos_desde_google_sheets())
+        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
+        st.success("✅ Datos actualizados correctamente.")
+        st.experimental_rerun()  # Recargar la interfaz
+
+    # Obtener los datos actualizados
+    df = st.session_state.df_dolar
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos")
