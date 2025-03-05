@@ -29,7 +29,7 @@ from wordcloud import WordCloud, STOPWORDS
 st.set_page_config(page_title="💵 Cotizaciones financieras.Ar", page_icon="💵", layout="wide")
 # Cargar la imagen y mostrarla en el menú lateral
 imagen_path = "Dolar.jpg"  # Asegúrate de que este archivo esté en la misma carpeta que tu script
-st.sidebar.image(imagen_path, use_column_width=True)
+st.sidebar.image(imagen_path, use_container_width=True)
 
 # Título en el menú lateral
 st.sidebar.title("📊 Cotizaciones financieras.Ar")
