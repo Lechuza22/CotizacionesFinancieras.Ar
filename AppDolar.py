@@ -569,8 +569,6 @@ def mostrar_prediccion_riesgo_pais():
 # =========================
 # 📌 google sheet
 # =========================
-# Configurar la página
-st.set_page_config(page_title="💵 Precio del dólar Hoy", page_icon="💵", layout="wide")
 
 # URL de la hoja de cálculo de Google Sheets en formato CSV
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1LdW7KvqsT5ifoAhJ_wetpIEaDzDYKPGyUHStwpsQVYo/gviz/tq?tqx=out:csv"
