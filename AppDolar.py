@@ -636,29 +636,15 @@ def cargar_datos_desde_google_sheets():
         return None
 
 # =========================
-# 📌 Función para mostrar predicción con actualización de datos
+# 📌 Función para mostrar predicción (Carga Automática)
 # =========================
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
 
-    # Cargar datos en sesión si aún no están cargados
-    if "df_dolar" not in st.session_state:
-        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
-
-    # SECCIÓN DEL BOTÓN (Siempre Visible)
-    st.subheader("🔄 Actualización de Datos")
-    st.write("Presione el botón para actualizar los datos desde Google Sheets.")
-
-    boton_actualizar = st.button("🔄 Actualizar Datos", key="actualizar_datos")
-
-    if boton_actualizar:
-        st.cache_data.clear()  # Limpiar caché para recargar datos
-        st.session_state.df_dolar = cargar_datos_desde_google_sheets()
-        st.success("✅ Datos actualizados correctamente.")
-        st.experimental_rerun()  # Recargar la interfaz
-
-    # Obtener los datos actualizados
-    df = st.session_state.df_dolar
+    # **Cargar datos AUTOMÁTICAMENTE cada vez que se abre esta vista**
+    st.cache_data.clear()  # Limpiar caché para forzar recarga
+    df = cargar_datos_desde_google_sheets()
+    st.session_state.df_dolar = df
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos")
