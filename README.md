@@ -68,7 +68,7 @@ Esta aplicación, desarrollada con Streamlit, proporciona una interfaz interacti
    streamlit run app.py
 3. En Streamlit https://app-dolarbluehoy-cj6qwlmqwwgtkpkyzdkvz7.streamlit.app/
 
-### 🌟 Posibles aplicaciones en un negocio de ventas de artículos de cocina
+## 🌟 Posibles aplicaciones en un negocio de ventas de artículos de cocina
 
 Esta aplicación puede ser utilizada por emprendedores y comercios del sector gastronómico para tomar decisiones financieras más informadas. Algunas de sus aplicaciones incluyen:
 
