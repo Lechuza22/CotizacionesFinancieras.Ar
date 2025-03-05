@@ -565,6 +565,77 @@ def mostrar_prediccion_riesgo_pais():
         fig = px.line(df_pred, x='Fecha', y='Predicción Riesgo País', title=f'Predicción del Riesgo País a {dias} días')
         st.plotly_chart(fig)
 
+
+# =========================
+# 📌 google sheet
+# =========================
+# URL de la hoja de cálculo de Google Sheets en formato CSV
+GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1LdW7KvqsT5ifoAhJ_wetpIEaDzDYKPGyUHStwpsQVYo/gviz/tq?tqx=out:csv"
+
+@st.cache_data
+def cargar_datos_desde_google_sheets():
+    """Carga los datos del dólar blue desde la hoja de cálculo de Google."""
+    try:
+        df = pd.read_csv(GOOGLE_SHEET_URL)
+        df.columns = ['Fecha', 'Compra', 'Venta', 'Promedio']  # Ajustar nombres de columnas según la estructura
+        df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+        df['Promedio'] = pd.to_numeric(df['Promedio'], errors='coerce')
+        df = df.dropna()
+        df.set_index('Fecha', inplace=True)
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos desde Google Sheets: {e}")
+        return None
+
+
+def predecir_dolar_blue_arima(df, dias_prediccion=7):
+    """Predice el valor del dólar blue usando ARIMA."""
+    if len(df) < 10:
+        st.warning("No hay suficientes datos históricos para realizar una predicción confiable.")
+        return None
+    
+    df = df.sort_index()
+    serie = df['Promedio']
+    
+    # Ajustar modelo ARIMA
+    modelo = ARIMA(serie, order=(1,1,1))
+    modelo_fit = modelo.fit()
+    
+    # Generar predicciones
+    predicciones = modelo_fit.forecast(steps=dias_prediccion)
+    fechas_prediccion = pd.date_range(start=df.index[-1] + timedelta(days=1), periods=dias_prediccion, freq='D')
+    df_predicciones = pd.DataFrame({'Fecha': fechas_prediccion, 'Predicción Valor': predicciones})
+    
+    return df_predicciones
+
+
+def mostrar_prediccion():
+    """Muestra la predicción del dólar blue en Streamlit."""
+    st.title("📈 Predicción del Dólar Blue")
+    df = cargar_datos_desde_google_sheets()
+    
+    if df is not None and not df.empty:
+        st.subheader("Datos Históricos")
+        st.dataframe(df.tail(10))
+        
+        dias_prediccion = st.selectbox("Seleccione el horizonte de predicción (días):", [3, 5, 7, 14])
+        df_predicciones = predecir_dolar_blue_arima(df, dias_prediccion)
+        
+        if df_predicciones is not None:
+            st.subheader(f"Predicción para los próximos {dias_prediccion} días")
+            st.dataframe(df_predicciones)
+            
+            fig = px.line(df_predicciones, x='Fecha', y='Predicción Valor', title=f"Predicción del Dólar Blue a {dias_prediccion} días")
+            st.plotly_chart(fig)
+        else:
+            st.warning("No se pudo generar la predicción debido a datos insuficientes.")
+    else:
+        st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
+
+
+
+
 # =========================
 # 📌 MENÚ PRINCIPAL
 # =========================
