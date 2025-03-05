@@ -12,3 +12,4 @@ matplotlib
 tensorflow
 textblob
 nltk
+prophet
