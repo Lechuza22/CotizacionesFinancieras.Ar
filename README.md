@@ -66,7 +66,7 @@ Esta aplicación, desarrollada con Streamlit, proporciona una interfaz interacti
 2. Ejecutar la aplicación con Streamlit:
    ```bash
    streamlit run app.py
-3. En Streamlit https://app-dolarbluehoy-cj6qwlmqwwgtkpkyzdkvz7.streamlit.app/
+3. En Streamlit https://cotizacionesfinancierasar.streamlit.app/ 
 
 ## 🌟 Posibles aplicaciones en un negocio de ventas 
 
