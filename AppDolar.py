@@ -682,14 +682,20 @@ def predecir_dolar_blue_prophet(df, dias_prediccion=7):
 def mostrar_prediccion_dolar():
     st.title("📈 Predicción del Dólar Blue")
 
-    # 🔹 **Forzar la actualización de datos**
+    # 🔄 Forzar actualización
     st.cache_data.clear()
     df = cargar_datos_desde_google_sheets()
 
     if df is not None and not df.empty:
         st.subheader("📊 Datos Históricos Completos")
-        st.dataframe(df)  # 🔹 Mostrar **todas** las filas
+        st.dataframe(df)
 
+        # 🔹 Mostrar gráfico del histórico
+        fig_hist = px.line(df, x='Fecha', y='Promedio', title="📉 Evolución Histórica del Dólar Blue")
+        fig_hist.update_layout(xaxis_title="Fecha", yaxis_title="Valor Promedio ($)")
+        st.plotly_chart(fig_hist)
+
+        # 🔹 Elegir modelo
         modelo_seleccionado = st.selectbox("📌 Seleccione un modelo de predicción:", ["ARIMA", "Prophet"])
 
         if modelo_seleccionado == "ARIMA":
@@ -700,10 +706,8 @@ def mostrar_prediccion_dolar():
         if predicciones is not None:
             st.subheader(f"🔮 Predicción del Dólar Blue con {modelo_seleccionado}")
             st.dataframe(predicciones)
-            fig = px.line(predicciones, x='Fecha', y='Predicción Valor', title=f"📈 Predicción del Dólar Blue con {modelo_seleccionado}")
-            st.plotly_chart(fig)
 
-        # 🔹 Combinar histórico + predicción para graficar juntos
+            # 🔹 Combinar histórico + predicción
             df_historico = df[['Fecha', 'Promedio']].rename(columns={'Promedio': 'Valor'})
             df_historico['Origen'] = 'Histórico'
             df_predicciones = predicciones.rename(columns={'Predicción Valor': 'Valor'})
@@ -711,17 +715,17 @@ def mostrar_prediccion_dolar():
 
             df_comb = pd.concat([df_historico, df_predicciones])
 
-            # 🔹 Graficar combinado
-            fig = px.line(df_comb, x='Fecha', y='Valor', color='Origen',
-                          title=f"📈 Dólar Blue: Histórico + Predicción con {modelo_seleccionado}",
-                          markers=True)
-            fig.update_layout(xaxis_title="Fecha", yaxis_title="Valor del Dólar Blue ($)")
-            st.plotly_chart(fig)
-            
+            # 🔹 Gráfico combinado
+            fig_comb = px.line(df_comb, x='Fecha', y='Valor', color='Origen',
+                               title=f"📈 Dólar Blue: Histórico + Predicción con {modelo_seleccionado}",
+                               markers=True)
+            fig_comb.update_layout(xaxis_title="Fecha", yaxis_title="Valor del Dólar Blue ($)")
+            st.plotly_chart(fig_comb)
         else:
             st.warning("⚠️ No se pudo generar la predicción debido a datos insuficientes.")
     else:
         st.warning("⚠️ No se pudieron obtener los datos históricos para realizar la predicción.")
+
 
 
 
