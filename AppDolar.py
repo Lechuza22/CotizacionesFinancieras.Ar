@@ -698,7 +698,7 @@ def mostrar_prediccion_dolar():
             annotations=[
                 dict(
                     x=pd.to_datetime("2024-04-13"),
-                    y=df[df['Fecha'] == pd.to_datetime("2024-04-13")]['Promedio'].values[0] if not df[df['Fecha'] == pd.to_datetime("2024-04-13")].empty else df['Promedio'].max(),
+                    y=df[df['Fecha'] == pd.to_datetime("2025-04-13")]['Promedio'].values[0] if not df[df['Fecha'] == pd.to_datetime("2024-04-13")].empty else df['Promedio'].max(),
                     text="📌 Liberación cepo",
                     showarrow=True,
                     arrowhead=2,
