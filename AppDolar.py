@@ -692,7 +692,24 @@ def mostrar_prediccion_dolar():
 
         # 🔹 Mostrar gráfico del histórico
         fig_hist = px.line(df, x='Fecha', y='Promedio', title="📉 Evolución Histórica del Dólar Blue")
-        fig_hist.update_layout(xaxis_title="Fecha", yaxis_title="Valor Promedio ($)")
+        fig_hist.update_layout(
+            xaxis_title="Fecha",
+            yaxis_title="Valor Promedio ($)",
+            annotations=[
+                dict(
+                    x=pd.to_datetime("2024-04-13"),
+                    y=df[df['Fecha'] == pd.to_datetime("2024-04-13")]['Promedio'].values[0] if not df[df['Fecha'] == pd.to_datetime("2024-04-13")].empty else df['Promedio'].max(),
+                    text="📌 Liberación cepo",
+                    showarrow=True,
+                    arrowhead=2,
+                    ax=0,
+                    ay=-40,
+                    bgcolor="rgba(255,255,0,0.9)",
+                    font=dict(color="black")
+                )
+            ]
+        )
+
         st.plotly_chart(fig_hist)
 
         # 🔹 Elegir modelo
