@@ -702,6 +702,22 @@ def mostrar_prediccion_dolar():
             st.dataframe(predicciones)
             fig = px.line(predicciones, x='Fecha', y='Predicción Valor', title=f"📈 Predicción del Dólar Blue con {modelo_seleccionado}")
             st.plotly_chart(fig)
+
+        # 🔹 Combinar histórico + predicción para graficar juntos
+            df_historico = df[['Fecha', 'Promedio']].rename(columns={'Promedio': 'Valor'})
+            df_historico['Origen'] = 'Histórico'
+            df_predicciones = predicciones.rename(columns={'Predicción Valor': 'Valor'})
+            df_predicciones['Origen'] = 'Predicción'
+
+            df_comb = pd.concat([df_historico, df_predicciones])
+
+            # 🔹 Graficar combinado
+            fig = px.line(df_comb, x='Fecha', y='Valor', color='Origen',
+                          title=f"📈 Dólar Blue: Histórico + Predicción con {modelo_seleccionado}",
+                          markers=True)
+            fig.update_layout(xaxis_title="Fecha", yaxis_title="Valor del Dólar Blue ($)")
+            st.plotly_chart(fig)
+            
         else:
             st.warning("⚠️ No se pudo generar la predicción debido a datos insuficientes.")
     else:
